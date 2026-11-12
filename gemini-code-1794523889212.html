@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Sistema de Geração de Etiquetas - CD Venâncio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8 font-sans">
+  <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-blue-800">Geração de Etiquetas - Ressuprimento</h1>
+      <span class="text-sm bg-blue-100 text-blue-800 py-1 px-3 rounded-full font-semibold">Versão c/ Dashboard Integrado</span>
+    </div>
+
+    <!-- Exibição de Mensagens de Erro/Alerta -->
+    <div id="mensagem-alerta" class="hidden mb-4 p-4 rounded-md font-semibold"></div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      
+      <!-- Passo 1: Importar Planilhas -->
+      <div class="border p-4 rounded bg-gray-50 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">1. Importar Planilhas</h2>
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-600 mb-1">Planilha de Ressuprimento</label>
+          <input type="file" id="upload-ressuprimento" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          <p id="status-ressuprimento" class="text-xs text-red-500 mt-1">Aguardando arquivo...</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">Planilha Saldo de Estoque</label>
+          <input type="file" id="upload-saldo" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+          <p id="status-saldo" class="text-xs text-red-500 mt-1">Aguardando arquivo...</p>
+        </div>
+      </div>
+
+      <!-- Passo 2: Inserir Produtos -->
+      <div class="border p-4 rounded bg-gray-50 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">2. Inserir Produtos</h2>
+        <div class="flex gap-2 mb-2">
+          <input type="number" id="input-codigo" placeholder="Código do Produto" class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+          <input type="number" id="input-qtd" placeholder="Qtd (Opcional)" class="w-32 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" disabled title="Deixe em branco para usar a qtd da planilha">
+          <button id="btn-adicionar" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition" disabled>Adicionar</button>
+        </div>
+        <p class="text-xs text-gray-500">Importe as planilhas para liberar a digitação. O sistema fará o split (divisão) entre os lotes automaticamente se necessário.</p>
+      </div>
+    </div>
+
+    <!-- Dashboard / Apontadores -->
+    <h2 class="text-lg font-semibold mb-3 text-gray-700">Painel de Produtividade (Sessão Atual)</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      
+      <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg flex flex-col justify-center items-center shadow-sm">
+        <h3 class="text-sm font-bold text-blue-800 uppercase tracking-wider mb-1">Unidades Geradas</h3>
+        <p id="dash-total-unidades" class="text-4xl font-black text-blue-600">0</p>
+      </div>
+
+      <div class="bg-green-50 border border-green-200 p-4 rounded-lg flex flex-col justify-center items-center shadow-sm">
+        <h3 class="text-sm font-bold text-green-800 uppercase tracking-wider mb-1">Qtd. de Etiquetas</h3>
+        <p id="dash-total-etiquetas" class="text-4xl font-black text-green-600">0</p>
+      </div>
+
+      <div class="bg-purple-50 border border-purple-200 p-4 rounded-lg shadow-sm">
+        <h3 class="text-sm font-bold text-purple-800 uppercase tracking-wider mb-2">Top Setores (Origem)</h3>
+        <div class="max-h-24 overflow-y-auto pr-2">
+          <ul id="dash-setores" class="text-sm text-purple-900 space-y-1 font-medium">
+            <li class="text-purple-400 italic">Nenhum dado processado</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Passo 3: Lista de Produtos e Exportação -->
+    <div class="border p-4 rounded shadow-sm bg-white">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold text-gray-700">Lista para Exportação</h2>
+        <div class="flex gap-3">
+          <button id="btn-limpar" class="bg-red-100 text-red-600 border border-red-300 px-4 py-2 rounded hover:bg-red-200 disabled:opacity-50 font-semibold transition" disabled>
+            Limpar Tudo
+          </button>
+          <button id="btn-exportar" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 font-bold transition shadow-sm" disabled>
+            Gerar Arquivo (.xls)
+          </button>
+        </div>
+      </div>
+      
+      <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <table class="w-full text-sm text-left border-collapse">
+          <thead class="bg-gray-100 text-gray-700">
+            <tr>
+              <th class="p-3 border-b">CÓDIGO</th>
+              <th class="p-3 border-b">CÓD. LOC.</th>
+              <th class="p-3 border-b">DESCRIÇÃO</th>
+              <th class="p-3 border-b">QTD</th>
+              <th class="p-3 border-b">ENDEREÇO</th>
+              <th class="p-3 border-b">LOTE</th>
+              <th class="p-3 border-b">VALIDADE</th>
+              <th class="p-3 border-b text-center">AÇÃO</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-corpo">
+            <tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- A tag type="module" permite usarmos import do Firebase no navegador -->
+  <script type="module">
+    // IMPORTAÇÕES DO FIREBASE VIA CDN
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+
+    // CONFIGURAÇÃO DO SEU PROJETO
+    const firebaseConfig = {
+      apiKey: "AIzaSyCyURjYydkNxRRqP0CUMakqVWAXRVhqabM",
+      authDomain: "etiquetas-logistica.firebaseapp.com",
+      projectId: "etiquetas-logistica",
+      storageBucket: "etiquetas-logistica.firebasestorage.app",
+      messagingSenderId: "303494095912",
+      appId: "1:303494095912:web:5dd20d81f8081e6d9c011d"
+    };
+
+    // INICIALIZA O FIREBASE E O BANCO DE DADOS
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Variáveis Globais
+    let ressuprimentoData = [];
+    let etiquetasExportar = [];
+    let estoquePorEndereco = {}; 
+
+    // Torna a função removerItem disponível globalmente (pois scripts module são isolados)
+    window.removerItem = (index) => {
+      const item = etiquetasExportar[index];
+      const lotesDisponiveis = estoquePorEndereco[item._chaveSaldo];
+      if (lotesDisponiveis) {
+        const loteOriginal = lotesDisponiveis.find(l => l.lote === item._lote && l.validade === item._validade);
+        if (loteOriginal) {
+          loteOriginal.saldoAtual += item.QTD;
+        }
+      }
+      etiquetasExportar.splice(index, 1);
+      atualizarTabela();
+    };
+
+    const normalizarChave = (chave) => {
+      if (!chave) return '';
+      return chave.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+    };
+
+    const formatarValidade = (dataVal) => {
+      if (!dataVal) return "N/D";
+      if (dataVal instanceof Date) {
+          const m = String(dataVal.getUTCMonth() + 1).padStart(2, '0');
+          const a = dataVal.getUTCFullYear();
+          return `${m}/${a}`;
+      }
+      const val = String(dataVal).trim();
+      const regexMesAno = /^(\d{1,2})\/(\d{4})$/;
+      if (regexMesAno.test(val)) {
+          let [_, m, a] = val.match(regexMesAno);
+          return `${m.padStart(2, '0')}/${a}`;
+      }
+      const partes = val.split(/[\/\-]/);
+      if (partes.length >= 2) {
+          let m = partes[0].padStart(2, '0');
+          let a = partes[partes.length - 1]; 
+          if (Number(m) > 12 && partes.length >= 3) {
+              m = partes[1].padStart(2, '0'); 
+          }
+          if (a.length === 2) a = "20" + a;
+          if (a.length === 4) return `${m}/${a}`;
+      }
+      return val;
+    };
+
+    const lerExcel = (file, callback) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = window.XLSX.read(data, { type: 'array', cellDates: true });
+        const primeiraPlanilha = workbook.SheetNames[0];
+        const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[primeiraPlanilha], { raw: true });
+        
+        const normalizedRows = rows.map(row => {
+          const newRow = {};
+          Object.keys(row).forEach(key => {
+            newRow[normalizarChave(key)] = row[key];
+          });
+          return newRow;
+        });
+        callback(normalizedRows);
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
+    document.getElementById('upload-ressuprimento').addEventListener('change', function(e) {
+      if(e.target.files.length === 0) return;
+      lerExcel(e.target.files[0], (data) => {
+        ressuprimentoData = data;
+        const p = document.getElementById('status-ressuprimento');
+        p.textContent = `Carregado: ${data.length} linhas`;
+        p.className = 'text-xs text-green-600 mt-1 font-semibold';
+        verificarLiberacaoInput();
+      });
+    });
+
+    document.getElementById('upload-saldo').addEventListener('change', function(e) {
+      if(e.target.files.length === 0) return;
+      lerExcel(e.target.files[0], (data) => {
+        estoquePorEndereco = {};
+        data.forEach(item => {
+          const codigo = String(item["PRODUTO"]).trim(); 
+          const endereco = String(item["LOCALIZADOR"]).trim();
+          const saldo = parseFloat(item["SALDO"]) || 0;
+          const lote = item["LOTE"] || "N/D";
+          const validade = formatarValidade(item["VALIDADE"]);
+          const codigoLocalizador = item["CODIGO LOCALIZADOR"] || "N/D";
+          
+          if(codigo && endereco && saldo > 0) {
+            const key = `${codigo}-${endereco}`;
+            if(!estoquePorEndereco[key]) estoquePorEndereco[key] = [];
+            
+            estoquePorEndereco[key].push({
+              lote: lote,
+              validade: validade,
+              saldoAtual: saldo,
+              codigoLocalizador: codigoLocalizador
+            });
+          }
+        });
+
+        const p = document.getElementById('status-saldo');
+        p.textContent = `Carregado: ${data.length} linhas (Lotes mapeados com sucesso)`;
+        p.className = 'text-xs text-green-600 mt-1 font-semibold';
+        verificarLiberacaoInput();
+      });
+    });
+
+    const verificarLiberacaoInput = () => {
+      if (ressuprimentoData.length > 0 && Object.keys(estoquePorEndereco).length > 0) {
+        document.getElementById('input-codigo').disabled = false;
+        document.getElementById('input-qtd').disabled = false;
+        document.getElementById('btn-adicionar').disabled = false;
+      }
+    };
+
+    const mostrarMensagem = (msg, tipo = 'erro') => {
+      const div = document.getElementById('mensagem-alerta');
+      div.textContent = msg;
+      div.className = `mb-4 p-3 rounded-md font-semibold text-sm shadow-sm ${tipo === 'erro' ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-green-100 text-green-700 border border-green-300'}`;
+      div.style.display = 'block';
+      setTimeout(() => { div.style.display = 'none'; }, 8000); 
+    };
+
+    document.getElementById('btn-adicionar').addEventListener('click', () => {
+      const codigoInput = document.getElementById('input-codigo').value.trim();
+      const qtdInputText = document.getElementById('input-qtd').value.trim();
+      
+      if (!codigoInput) return;
+
+      const itemRessup = ressuprimentoData.find(r => String(r["PRODUTO"]) === String(codigoInput));
+      if (!itemRessup) {
+        mostrarMensagem(`Código ${codigoInput} não encontrado na planilha de Ressuprimento.`);
+        return;
+      }
+
+      const enderecoRessup = itemRessup["ENDERECO"] || itemRessup["ENDEREÇO"]; 
+      const descRessup = itemRessup["DESCRICAO"] || itemRessup["DESCRIÇÃO"];
+      
+      let qtdSolicitada = 0;
+      if (qtdInputText !== "") {
+        qtdSolicitada = parseFloat(qtdInputText);
+      } else {
+        qtdSolicitada = parseFloat(itemRessup["QTDE PEDIDA"] || itemRessup["QTD"] || 0);
+      }
+
+      if (qtdSolicitada <= 0) {
+        mostrarMensagem(`A quantidade para o código ${codigoInput} deve ser maior que zero.`);
+        return;
+      }
+
+      const chaveSaldo = `${codigoInput}-${enderecoRessup}`;
+      const lotesDisponiveis = estoquePorEndereco[chaveSaldo] || [];
+      const saldoTotalEndereco = lotesDisponiveis.reduce((acc, l) => acc + l.saldoAtual, 0);
+
+      if (saldoTotalEndereco === 0) {
+         mostrarMensagem(`O código ${codigoInput} não possui saldo positivo cadastrado no endereço de origem (${enderecoRessup}).`);
+         return;
+      }
+
+      if (saldoTotalEndereco < qtdSolicitada) {
+        mostrarMensagem(`Saldo insuficiente para o código ${codigoInput} no endereço ${enderecoRessup}. Solicitado: ${qtdSolicitada} | Disponível: ${saldoTotalEndereco}`);
+        return;
+      }
+
+      let qtdRestante = qtdSolicitada;
+
+      for (let lote of lotesDisponiveis) {
+        if (qtdRestante <= 0) break; 
+        if (lote.saldoAtual > 0) {
+          const qtdASeparar = Math.min(qtdRestante, lote.saldoAtual);
+          
+          lote.saldoAtual -= qtdASeparar;
+          qtdRestante -= qtdASeparar;
+
+          const novaEtiqueta = {
+            CÓDIGO: codigoInput,
+            "CÓD. LOCALIZADOR": lote.codigoLocalizador, 
+            DESCRIÇÃO: descRessup,
+            QTD: qtdASeparar,
+            ENDEREÇO: enderecoRessup,
+            LOTE: lote.lote,
+            VALIDADE: lote.validade,
+            _chaveSaldo: chaveSaldo,
+            _lote: lote.lote,
+            _validade: lote.validade
+          };
+
+          etiquetasExportar.push(novaEtiqueta);
+        }
+      }
+      
+      document.getElementById('input-codigo').value = '';
+      document.getElementById('input-qtd').value = '';
+      document.getElementById('input-codigo').focus();
+      
+      atualizarTabela();
+    });
+
+    document.getElementById('input-codigo').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        document.getElementById('input-qtd').focus();
+      }
+    });
+
+    document.getElementById('input-qtd').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        document.getElementById('btn-adicionar').click();
+      }
+    });
+
+    const atualizarDashboard = () => {
+      const totalUnidades = etiquetasExportar.reduce((acc, curr) => acc + curr.QTD, 0);
+      document.getElementById('dash-total-unidades').textContent = totalUnidades;
+      document.getElementById('dash-total-etiquetas').textContent = etiquetasExportar.length;
+
+      const setores = {};
+      etiquetasExportar.forEach(item => {
+        const setor = item.ENDEREÇO.split('-')[0] || item.ENDEREÇO;
+        if(!setores[setor]) setores[setor] = 0;
+        setores[setor] += item.QTD;
+      });
+
+      const ulSetores = document.getElementById('dash-setores');
+      ulSetores.innerHTML = '';
+      const setoresArray = Object.entries(setores).sort((a, b) => b[1] - a[1]);
+
+      if (setoresArray.length === 0) {
+        ulSetores.innerHTML = '<li class="text-purple-400 italic">Nenhum dado processado</li>';
+      } else {
+        setoresArray.forEach(([setor, qtd]) => {
+          ulSetores.innerHTML += `
+            <li class="flex justify-between items-center border-b border-purple-100 last:border-0 py-1">
+              <span class="font-bold text-purple-900">${setor}</span> 
+              <span class="bg-purple-200 text-purple-800 text-xs py-1 px-2 rounded-full">${qtd} un</span>
+            </li>`;
+        });
+      }
+    };
+
+    const atualizarTabela = () => {
+      const tbody = document.getElementById('tabela-corpo');
+      tbody.innerHTML = '';
+      
+      const btnExportar = document.getElementById('btn-exportar');
+      const btnLimpar = document.getElementById('btn-limpar');
+      
+      btnExportar.disabled = etiquetasExportar.length === 0;
+      btnLimpar.disabled = etiquetasExportar.length === 0;
+
+      if (etiquetasExportar.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>';
+      } else {
+        etiquetasExportar.forEach((item, index) => {
+          const tr = document.createElement('tr');
+          tr.className = "border-b hover:bg-gray-50 bg-white";
+          tr.innerHTML = `
+            <td class="p-3">${item.CÓDIGO}</td>
+            <td class="p-3 font-mono text-gray-500 text-xs">${item["CÓD. LOCALIZADOR"]}</td>
+            <td class="p-3 truncate max-w-[200px]" title="${item.DESCRIÇÃO}">${item.DESCRIÇÃO}</td>
+            <td class="p-3 font-bold text-blue-700">${item.QTD}</td>
+            <td class="p-3 font-semibold text-gray-700">${item.ENDEREÇO}</td>
+            <td class="p-3 text-xs text-gray-600">${item.LOTE}</td>
+            <td class="p-3 text-xs text-gray-600">${item.VALIDADE}</td>
+            <td class="p-3 text-center">
+              <button onclick="removerItem(${index})" class="text-red-500 hover:text-red-700 font-bold px-2 rounded hover:bg-red-50" title="Excluir e devolver saldo">X</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+      atualizarDashboard();
+    };
+
+    document.getElementById('btn-limpar').addEventListener('click', () => {
+      if (!confirm("Tem certeza que deseja limpar toda a lista? Os saldos utilizados serão devolvidos à memória e você poderá processá-los novamente.")) return;
+      etiquetasExportar.forEach(item => {
+        const lotesDisponiveis = estoquePorEndereco[item._chaveSaldo];
+        if (lotesDisponiveis) {
+          const loteOriginal = lotesDisponiveis.find(l => l.lote === item._lote && l.validade === item._validade);
+          if (loteOriginal) {
+            loteOriginal.saldoAtual += item.QTD;
+          }
+        }
+      });
+      etiquetasExportar = [];
+      atualizarTabela();
+      mostrarMensagem('Lista limpa com sucesso. Saldos restaurados.', 'sucesso');
+    });
+
+    // FUNÇÃO QUE SALVA NO FIREBASE
+    async function salvarHistoricoNoFirebase(etiquetas) {
+      try {
+        const btn = document.getElementById('btn-exportar');
+        btn.textContent = "Salvando...";
+        
+        const totalUnidades = etiquetas.reduce((acc, curr) => acc + curr.QTD, 0);
+
+        await addDoc(collection(db, "historico_etiquetas"), {
+          data_geracao: serverTimestamp(),
+          total_etiquetas: etiquetas.length,
+          total_unidades: totalUnidades,
+          produtos: etiquetas.map(e => ({
+            codigo: e.CÓDIGO,
+            codigo_localizador: e["CÓD. LOCALIZADOR"],
+            descricao: e.DESCRIÇÃO,
+            quantidade: e.QTD,
+            endereco: e.ENDEREÇO,
+            lote: e.LOTE
+          }))
+        });
+        console.log("Histórico salvo no Firebase com sucesso.");
+      } catch (e) {
+        console.error("Erro ao salvar no Firebase: ", e);
+        mostrarMensagem('Atenção: O arquivo Excel será gerado, mas ocorreu um erro ao salvar o histórico online.', 'erro');
+      } finally {
+        document.getElementById('btn-exportar').textContent = "Gerar Arquivo (.xls)";
+      }
+    }
+
+    document.getElementById('btn-exportar').addEventListener('click', async () => {
+      if (etiquetasExportar.length === 0) return;
+
+      // 1. Salva no banco de dados primeiro
+      await salvarHistoricoNoFirebase(etiquetasExportar);
+
+      // 2. Exporta o arquivo
+      const dadosLimpos = etiquetasExportar.map(e => ({
+        CÓDIGO: e.CÓDIGO,
+        "CÓD. LOCALIZADOR": e["CÓD. LOCALIZADOR"],
+        DESCRIÇÃO: e.DESCRIÇÃO,
+        QTD: e.QTD,
+        ENDEREÇO: e.ENDEREÇO,
+        LOTE: e.LOTE,
+        VALIDADE: e.VALIDADE
+      }));
+
+      const worksheet = window.XLSX.utils.json_to_sheet(dadosLimpos);
+      const workbook = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(workbook, worksheet, "Etiquetas");
+      
+      window.XLSX.writeFile(workbook, "Etiquetas_Exportadas.xls", { bookType: 'xls' });
+      mostrarMensagem('Arquivo exportado e histórico salvo online com sucesso!', 'sucesso');
+    });
+  </script>
+</body>
+</html>
