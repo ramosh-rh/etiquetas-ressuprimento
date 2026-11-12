@@ -8,9 +8,16 @@
 </head>
 <body class="bg-gray-100 p-8 font-sans">
   <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-blue-800">Geração de Etiquetas - Ressuprimento</h1>
-      <span class="text-sm bg-blue-100 text-blue-800 py-1 px-3 rounded-full font-semibold">Versão c/ Dashboard Integrado</span>
+    
+    <!-- Cabeçalho -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-blue-800">Geração de Etiquetas - Ressuprimento</h1>
+        <span class="text-sm bg-blue-100 text-blue-800 py-1 px-3 rounded-full font-semibold mt-2 inline-block">Versão c/ BD e Relatórios</span>
+      </div>
+      <button id="btn-abrir-relatorio" class="bg-purple-600 text-white font-bold px-4 py-2 rounded shadow hover:bg-purple-700 transition">
+        📊 Histórico e Relatórios
+      </button>
     </div>
 
     <!-- Exibição de Mensagens de Erro/Alerta -->
@@ -21,13 +28,11 @@
       <!-- Passo 1: Importar Planilhas -->
       <div class="border p-4 rounded bg-gray-50 shadow-sm">
         <h2 class="text-lg font-semibold mb-4 text-gray-700">1. Importar Planilhas</h2>
-        
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-600 mb-1">Planilha de Ressuprimento</label>
           <input type="file" id="upload-ressuprimento" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
           <p id="status-ressuprimento" class="text-xs text-red-500 mt-1">Aguardando arquivo...</p>
         </div>
-
         <div>
           <label class="block text-sm font-medium text-gray-600 mb-1">Planilha Saldo de Estoque</label>
           <input type="file" id="upload-saldo" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
@@ -43,26 +48,23 @@
           <input type="number" id="input-qtd" placeholder="Qtd (Opcional)" class="w-32 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" disabled title="Deixe em branco para usar a qtd da planilha">
           <button id="btn-adicionar" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition" disabled>Adicionar</button>
         </div>
-        <p class="text-xs text-gray-500">Importe as planilhas para liberar a digitação. O sistema fará o split (divisão) entre os lotes automaticamente se necessário.</p>
+        <p class="text-xs text-gray-500">Importe as planilhas para liberar a digitação.</p>
       </div>
     </div>
 
-    <!-- Dashboard / Apontadores -->
+    <!-- Dashboard Atual (Em Memória) -->
     <h2 class="text-lg font-semibold mb-3 text-gray-700">Painel de Produtividade (Sessão Atual)</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      
       <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg flex flex-col justify-center items-center shadow-sm">
         <h3 class="text-sm font-bold text-blue-800 uppercase tracking-wider mb-1">Unidades Geradas</h3>
         <p id="dash-total-unidades" class="text-4xl font-black text-blue-600">0</p>
       </div>
-
       <div class="bg-green-50 border border-green-200 p-4 rounded-lg flex flex-col justify-center items-center shadow-sm">
         <h3 class="text-sm font-bold text-green-800 uppercase tracking-wider mb-1">Qtd. de Etiquetas</h3>
         <p id="dash-total-etiquetas" class="text-4xl font-black text-green-600">0</p>
       </div>
-
       <div class="bg-purple-50 border border-purple-200 p-4 rounded-lg shadow-sm">
-        <h3 class="text-sm font-bold text-purple-800 uppercase tracking-wider mb-2">Top Setores (Origem)</h3>
+        <h3 class="text-sm font-bold text-purple-800 uppercase tracking-wider mb-2">Top Setores (Sessão)</h3>
         <div class="max-h-24 overflow-y-auto pr-2">
           <ul id="dash-setores" class="text-sm text-purple-900 space-y-1 font-medium">
             <li class="text-purple-400 italic">Nenhum dado processado</li>
@@ -84,7 +86,6 @@
           </button>
         </div>
       </div>
-      
       <div class="overflow-x-auto rounded-lg border border-gray-200">
         <table class="w-full text-sm text-left border-collapse">
           <thead class="bg-gray-100 text-gray-700">
@@ -107,13 +108,80 @@
     </div>
   </div>
 
-  <!-- A tag type="module" permite usarmos import do Firebase no navegador -->
-  <script type="module">
-    // IMPORTAÇÕES DO FIREBASE VIA CDN
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+  <!-- MODAL DE RELATÓRIOS (Inicialmente Oculto) -->
+  <div id="modal-relatorio" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl flex flex-col" style="max-height: 90vh;">
+      
+      <div class="flex justify-between items-center p-5 border-b bg-gray-50 rounded-t-lg">
+        <h2 class="text-xl font-bold text-gray-800">Relatório de Apontamentos</h2>
+        <button id="btn-fechar-relatorio" class="text-gray-500 hover:text-red-500 font-bold text-xl">&times;</button>
+      </div>
+      
+      <div class="p-5 flex flex-col gap-4 overflow-y-auto">
+        <!-- Filtros de Data -->
+        <div class="flex flex-wrap items-end gap-4 bg-gray-100 p-4 rounded-lg">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Data Inicial</label>
+            <input type="date" id="filtro-data-inicio" class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Data Final</label>
+            <input type="date" id="filtro-data-fim" class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500">
+          </div>
+          <button id="btn-buscar-relatorio" class="bg-purple-600 text-white px-5 py-2 rounded hover:bg-purple-700 font-bold transition">
+            Buscar Apontamentos
+          </button>
+        </div>
 
-    // CONFIGURAÇÃO DO SEU PROJETO
+        <p id="relatorio-status" class="text-sm font-semibold text-blue-600 hidden">Buscando dados no servidor...</p>
+
+        <!-- Indicadores do Relatório -->
+        <div id="relatorio-resultados" class="hidden flex-col gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-blue-50 border border-blue-200 p-4 rounded text-center">
+              <h4 class="text-xs font-bold text-blue-800 uppercase">Unidades Totais no Período</h4>
+              <p id="rel-total-unidades" class="text-3xl font-black text-blue-600 mt-1">0</p>
+            </div>
+            <div class="bg-green-50 border border-green-200 p-4 rounded text-center">
+              <h4 class="text-xs font-bold text-green-800 uppercase">Etiquetas Geradas no Período</h4>
+              <p id="rel-total-etiquetas" class="text-3xl font-black text-green-600 mt-1">0</p>
+            </div>
+            <div class="bg-purple-50 border border-purple-200 p-4 rounded">
+              <h4 class="text-xs font-bold text-purple-800 uppercase mb-2">Ranking de Setores (Período)</h4>
+              <ul id="rel-setores" class="text-sm space-y-1 max-h-20 overflow-y-auto"></ul>
+            </div>
+          </div>
+
+          <!-- Tabela de Detalhes -->
+          <h3 class="font-bold text-gray-700 border-b pb-2 mt-4">Detalhamento dos Apontamentos</h3>
+          <div class="overflow-x-auto border rounded max-h-64">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-gray-100 text-gray-700 sticky top-0">
+                <tr>
+                  <th class="p-2 border-b">DATA / HORA</th>
+                  <th class="p-2 border-b">CÓDIGO</th>
+                  <th class="p-2 border-b">DESCRIÇÃO</th>
+                  <th class="p-2 border-b">QTD</th>
+                  <th class="p-2 border-b">ENDEREÇO</th>
+                </tr>
+              </thead>
+              <tbody id="relatorio-tabela-corpo">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // ----------------------------------------------------
+    // 1. IMPORTAÇÕES E CONFIGURAÇÃO FIREBASE
+    // ----------------------------------------------------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+
+    // >>> ATENÇÃO RENATO: COLE AS SUAS CHAVES REAIS AQUI ANTES DE SUBIR PRO GITHUB <<<
     const firebaseConfig = {
       apiKey: "AIzaSyCyURjYydkNxRRqP0CUMakqVWAXRVhqabM",
       authDomain: "etiquetas-logistica.firebaseapp.com",
@@ -123,56 +191,29 @@
       appId: "1:303494095912:web:5dd20d81f8081e6d9c011d"
     };
 
-    // INICIALIZA O FIREBASE E O BANCO DE DADOS
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Variáveis Globais
+    // ----------------------------------------------------
+    // 2. VARIÁVEIS GLOBAIS (Sistema Principal)
+    // ----------------------------------------------------
     let ressuprimentoData = [];
     let etiquetasExportar = [];
     let estoquePorEndereco = {}; 
 
-    // Torna a função removerItem disponível globalmente (pois scripts module são isolados)
-    window.removerItem = (index) => {
-      const item = etiquetasExportar[index];
-      const lotesDisponiveis = estoquePorEndereco[item._chaveSaldo];
-      if (lotesDisponiveis) {
-        const loteOriginal = lotesDisponiveis.find(l => l.lote === item._lote && l.validade === item._validade);
-        if (loteOriginal) {
-          loteOriginal.saldoAtual += item.QTD;
-        }
-      }
-      etiquetasExportar.splice(index, 1);
-      atualizarTabela();
-    };
-
-    const normalizarChave = (chave) => {
-      if (!chave) return '';
-      return chave.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
-    };
-
+    // Funções Utilitárias e Excel
+    const normalizarChave = (chave) => chave ? chave.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase() : '';
+    
     const formatarValidade = (dataVal) => {
       if (!dataVal) return "N/D";
-      if (dataVal instanceof Date) {
-          const m = String(dataVal.getUTCMonth() + 1).padStart(2, '0');
-          const a = dataVal.getUTCFullYear();
-          return `${m}/${a}`;
-      }
+      if (dataVal instanceof Date) return `${String(dataVal.getUTCMonth() + 1).padStart(2, '0')}/${dataVal.getUTCFullYear()}`;
       const val = String(dataVal).trim();
-      const regexMesAno = /^(\d{1,2})\/(\d{4})$/;
-      if (regexMesAno.test(val)) {
-          let [_, m, a] = val.match(regexMesAno);
-          return `${m.padStart(2, '0')}/${a}`;
-      }
+      if (/^(\d{1,2})\/(\d{4})$/.test(val)) { let [_, m, a] = val.match(/^(\d{1,2})\/(\d{4})$/); return `${m.padStart(2, '0')}/${a}`; }
       const partes = val.split(/[\/\-]/);
       if (partes.length >= 2) {
-          let m = partes[0].padStart(2, '0');
-          let a = partes[partes.length - 1]; 
-          if (Number(m) > 12 && partes.length >= 3) {
-              m = partes[1].padStart(2, '0'); 
-          }
-          if (a.length === 2) a = "20" + a;
-          if (a.length === 4) return `${m}/${a}`;
+          let m = partes[0].padStart(2, '0'); let a = partes[partes.length - 1]; 
+          if (Number(m) > 12 && partes.length >= 3) m = partes[1].padStart(2, '0'); 
+          if (a.length === 2) a = "20" + a; if (a.length === 4) return `${m}/${a}`;
       }
       return val;
     };
@@ -182,19 +223,26 @@
       reader.onload = (e) => {
         const data = new Uint8Array(e.target.result);
         const workbook = window.XLSX.read(data, { type: 'array', cellDates: true });
-        const primeiraPlanilha = workbook.SheetNames[0];
-        const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[primeiraPlanilha], { raw: true });
-        
+        const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: true });
         const normalizedRows = rows.map(row => {
           const newRow = {};
-          Object.keys(row).forEach(key => {
-            newRow[normalizarChave(key)] = row[key];
-          });
+          Object.keys(row).forEach(key => { newRow[normalizarChave(key)] = row[key]; });
           return newRow;
         });
         callback(normalizedRows);
       };
       reader.readAsArrayBuffer(file);
+    };
+
+    // ----------------------------------------------------
+    // 3. EVENTOS DE UPLOAD E LEITURA
+    // ----------------------------------------------------
+    const verificarLiberacaoInput = () => {
+      if (ressuprimentoData.length > 0 && Object.keys(estoquePorEndereco).length > 0) {
+        document.getElementById('input-codigo').disabled = false;
+        document.getElementById('input-qtd').disabled = false;
+        document.getElementById('btn-adicionar').disabled = false;
+      }
     };
 
     document.getElementById('upload-ressuprimento').addEventListener('change', function(e) {
@@ -213,268 +261,256 @@
       lerExcel(e.target.files[0], (data) => {
         estoquePorEndereco = {};
         data.forEach(item => {
-          const codigo = String(item["PRODUTO"]).trim(); 
-          const endereco = String(item["LOCALIZADOR"]).trim();
-          const saldo = parseFloat(item["SALDO"]) || 0;
-          const lote = item["LOTE"] || "N/D";
-          const validade = formatarValidade(item["VALIDADE"]);
-          const codigoLocalizador = item["CODIGO LOCALIZADOR"] || "N/D";
-          
+          const codigo = String(item["PRODUTO"]).trim(); const endereco = String(item["LOCALIZADOR"]).trim();
+          const saldo = parseFloat(item["SALDO"]) || 0; const lote = item["LOTE"] || "N/D";
+          const validade = formatarValidade(item["VALIDADE"]); const codigoLocalizador = item["CODIGO LOCALIZADOR"] || "N/D";
           if(codigo && endereco && saldo > 0) {
             const key = `${codigo}-${endereco}`;
             if(!estoquePorEndereco[key]) estoquePorEndereco[key] = [];
-            
-            estoquePorEndereco[key].push({
-              lote: lote,
-              validade: validade,
-              saldoAtual: saldo,
-              codigoLocalizador: codigoLocalizador
-            });
+            estoquePorEndereco[key].push({ lote, validade, saldoAtual: saldo, codigoLocalizador });
           }
         });
-
         const p = document.getElementById('status-saldo');
-        p.textContent = `Carregado: ${data.length} linhas (Lotes mapeados com sucesso)`;
+        p.textContent = `Carregado: ${data.length} linhas`;
         p.className = 'text-xs text-green-600 mt-1 font-semibold';
         verificarLiberacaoInput();
       });
     });
 
-    const verificarLiberacaoInput = () => {
-      if (ressuprimentoData.length > 0 && Object.keys(estoquePorEndereco).length > 0) {
-        document.getElementById('input-codigo').disabled = false;
-        document.getElementById('input-qtd').disabled = false;
-        document.getElementById('btn-adicionar').disabled = false;
-      }
-    };
-
     const mostrarMensagem = (msg, tipo = 'erro') => {
       const div = document.getElementById('mensagem-alerta');
       div.textContent = msg;
       div.className = `mb-4 p-3 rounded-md font-semibold text-sm shadow-sm ${tipo === 'erro' ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-green-100 text-green-700 border border-green-300'}`;
-      div.style.display = 'block';
-      setTimeout(() => { div.style.display = 'none'; }, 8000); 
+      div.style.display = 'block'; setTimeout(() => { div.style.display = 'none'; }, 8000); 
     };
 
+    // ----------------------------------------------------
+    // 4. LÓGICA DE ADIÇÃO E TABELA
+    // ----------------------------------------------------
     document.getElementById('btn-adicionar').addEventListener('click', () => {
       const codigoInput = document.getElementById('input-codigo').value.trim();
       const qtdInputText = document.getElementById('input-qtd').value.trim();
-      
       if (!codigoInput) return;
 
       const itemRessup = ressuprimentoData.find(r => String(r["PRODUTO"]) === String(codigoInput));
-      if (!itemRessup) {
-        mostrarMensagem(`Código ${codigoInput} não encontrado na planilha de Ressuprimento.`);
-        return;
-      }
-
+      if (!itemRessup) return mostrarMensagem(`Código ${codigoInput} não encontrado na planilha de Ressuprimento.`);
+      
       const enderecoRessup = itemRessup["ENDERECO"] || itemRessup["ENDEREÇO"]; 
       const descRessup = itemRessup["DESCRICAO"] || itemRessup["DESCRIÇÃO"];
-      
-      let qtdSolicitada = 0;
-      if (qtdInputText !== "") {
-        qtdSolicitada = parseFloat(qtdInputText);
-      } else {
-        qtdSolicitada = parseFloat(itemRessup["QTDE PEDIDA"] || itemRessup["QTD"] || 0);
-      }
+      const qtdSolicitada = qtdInputText !== "" ? parseFloat(qtdInputText) : parseFloat(itemRessup["QTDE PEDIDA"] || itemRessup["QTD"] || 0);
 
-      if (qtdSolicitada <= 0) {
-        mostrarMensagem(`A quantidade para o código ${codigoInput} deve ser maior que zero.`);
-        return;
-      }
+      if (qtdSolicitada <= 0) return mostrarMensagem(`A quantidade para o código ${codigoInput} deve ser maior que zero.`);
 
       const chaveSaldo = `${codigoInput}-${enderecoRessup}`;
       const lotesDisponiveis = estoquePorEndereco[chaveSaldo] || [];
       const saldoTotalEndereco = lotesDisponiveis.reduce((acc, l) => acc + l.saldoAtual, 0);
 
-      if (saldoTotalEndereco === 0) {
-         mostrarMensagem(`O código ${codigoInput} não possui saldo positivo cadastrado no endereço de origem (${enderecoRessup}).`);
-         return;
-      }
-
-      if (saldoTotalEndereco < qtdSolicitada) {
-        mostrarMensagem(`Saldo insuficiente para o código ${codigoInput} no endereço ${enderecoRessup}. Solicitado: ${qtdSolicitada} | Disponível: ${saldoTotalEndereco}`);
-        return;
-      }
+      if (saldoTotalEndereco === 0) return mostrarMensagem(`O código ${codigoInput} não possui saldo positivo na origem (${enderecoRessup}).`);
+      if (saldoTotalEndereco < qtdSolicitada) return mostrarMensagem(`Saldo insuficiente! Origem: ${enderecoRessup}. Solicitado: ${qtdSolicitada} | Disponível: ${saldoTotalEndereco}`);
 
       let qtdRestante = qtdSolicitada;
-
       for (let lote of lotesDisponiveis) {
         if (qtdRestante <= 0) break; 
         if (lote.saldoAtual > 0) {
           const qtdASeparar = Math.min(qtdRestante, lote.saldoAtual);
-          
-          lote.saldoAtual -= qtdASeparar;
-          qtdRestante -= qtdASeparar;
-
-          const novaEtiqueta = {
-            CÓDIGO: codigoInput,
-            "CÓD. LOCALIZADOR": lote.codigoLocalizador, 
-            DESCRIÇÃO: descRessup,
-            QTD: qtdASeparar,
-            ENDEREÇO: enderecoRessup,
-            LOTE: lote.lote,
-            VALIDADE: lote.validade,
-            _chaveSaldo: chaveSaldo,
-            _lote: lote.lote,
-            _validade: lote.validade
-          };
-
-          etiquetasExportar.push(novaEtiqueta);
+          lote.saldoAtual -= qtdASeparar; qtdRestante -= qtdASeparar;
+          etiquetasExportar.push({
+            CÓDIGO: codigoInput, "CÓD. LOCALIZADOR": lote.codigoLocalizador, DESCRIÇÃO: descRessup, QTD: qtdASeparar, 
+            ENDEREÇO: enderecoRessup, LOTE: lote.lote, VALIDADE: lote.validade, _chaveSaldo: chaveSaldo, _lote: lote.lote, _validade: lote.validade
+          });
         }
       }
-      
-      document.getElementById('input-codigo').value = '';
-      document.getElementById('input-qtd').value = '';
-      document.getElementById('input-codigo').focus();
-      
+      document.getElementById('input-codigo').value = ''; document.getElementById('input-qtd').value = ''; document.getElementById('input-codigo').focus();
       atualizarTabela();
     });
 
-    document.getElementById('input-codigo').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        document.getElementById('input-qtd').focus();
-      }
-    });
-
-    document.getElementById('input-qtd').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        document.getElementById('btn-adicionar').click();
-      }
-    });
+    document.getElementById('input-codigo').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('input-qtd').focus(); });
+    document.getElementById('input-qtd').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('btn-adicionar').click(); });
 
     const atualizarDashboard = () => {
-      const totalUnidades = etiquetasExportar.reduce((acc, curr) => acc + curr.QTD, 0);
-      document.getElementById('dash-total-unidades').textContent = totalUnidades;
+      document.getElementById('dash-total-unidades').textContent = etiquetasExportar.reduce((acc, curr) => acc + curr.QTD, 0);
       document.getElementById('dash-total-etiquetas').textContent = etiquetasExportar.length;
-
+      
       const setores = {};
       etiquetasExportar.forEach(item => {
         const setor = item.ENDEREÇO.split('-')[0] || item.ENDEREÇO;
-        if(!setores[setor]) setores[setor] = 0;
-        setores[setor] += item.QTD;
+        setores[setor] = (setores[setor] || 0) + item.QTD;
       });
+      const ul = document.getElementById('dash-setores'); ul.innerHTML = '';
+      const arr = Object.entries(setores).sort((a, b) => b[1] - a[1]);
+      if (arr.length === 0) ul.innerHTML = '<li class="text-purple-400 italic">Nenhum dado</li>';
+      else arr.forEach(([s, q]) => ul.innerHTML += `<li class="flex justify-between border-b border-purple-100 py-1"><span class="font-bold text-purple-900">${s}</span><span class="bg-purple-200 text-xs py-1 px-2 rounded-full">${q} un</span></li>`);
+    };
 
-      const ulSetores = document.getElementById('dash-setores');
-      ulSetores.innerHTML = '';
-      const setoresArray = Object.entries(setores).sort((a, b) => b[1] - a[1]);
-
-      if (setoresArray.length === 0) {
-        ulSetores.innerHTML = '<li class="text-purple-400 italic">Nenhum dado processado</li>';
-      } else {
-        setoresArray.forEach(([setor, qtd]) => {
-          ulSetores.innerHTML += `
-            <li class="flex justify-between items-center border-b border-purple-100 last:border-0 py-1">
-              <span class="font-bold text-purple-900">${setor}</span> 
-              <span class="bg-purple-200 text-purple-800 text-xs py-1 px-2 rounded-full">${qtd} un</span>
-            </li>`;
-        });
-      }
+    window.removerItem = (index) => {
+      const item = etiquetasExportar[index];
+      const loteObj = (estoquePorEndereco[item._chaveSaldo] || []).find(l => l.lote === item._lote && l.validade === item._validade);
+      if (loteObj) loteObj.saldoAtual += item.QTD;
+      etiquetasExportar.splice(index, 1); atualizarTabela();
     };
 
     const atualizarTabela = () => {
-      const tbody = document.getElementById('tabela-corpo');
-      tbody.innerHTML = '';
-      
-      const btnExportar = document.getElementById('btn-exportar');
-      const btnLimpar = document.getElementById('btn-limpar');
-      
-      btnExportar.disabled = etiquetasExportar.length === 0;
-      btnLimpar.disabled = etiquetasExportar.length === 0;
+      const tbody = document.getElementById('tabela-corpo'); tbody.innerHTML = '';
+      document.getElementById('btn-exportar').disabled = etiquetasExportar.length === 0;
+      document.getElementById('btn-limpar').disabled = etiquetasExportar.length === 0;
 
-      if (etiquetasExportar.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>';
-      } else {
-        etiquetasExportar.forEach((item, index) => {
-          const tr = document.createElement('tr');
-          tr.className = "border-b hover:bg-gray-50 bg-white";
-          tr.innerHTML = `
-            <td class="p-3">${item.CÓDIGO}</td>
-            <td class="p-3 font-mono text-gray-500 text-xs">${item["CÓD. LOCALIZADOR"]}</td>
-            <td class="p-3 truncate max-w-[200px]" title="${item.DESCRIÇÃO}">${item.DESCRIÇÃO}</td>
-            <td class="p-3 font-bold text-blue-700">${item.QTD}</td>
-            <td class="p-3 font-semibold text-gray-700">${item.ENDEREÇO}</td>
-            <td class="p-3 text-xs text-gray-600">${item.LOTE}</td>
-            <td class="p-3 text-xs text-gray-600">${item.VALIDADE}</td>
-            <td class="p-3 text-center">
-              <button onclick="removerItem(${index})" class="text-red-500 hover:text-red-700 font-bold px-2 rounded hover:bg-red-50" title="Excluir e devolver saldo">X</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      }
+      if (etiquetasExportar.length === 0) tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado.</td></tr>';
+      else etiquetasExportar.forEach((item, index) => {
+        tbody.innerHTML += `<tr class="border-b hover:bg-gray-50 bg-white">
+          <td class="p-3">${item.CÓDIGO}</td><td class="p-3 text-xs text-gray-500 font-mono">${item["CÓD. LOCALIZADOR"]}</td>
+          <td class="p-3 truncate max-w-[200px]" title="${item.DESCRIÇÃO}">${item.DESCRIÇÃO}</td><td class="p-3 font-bold text-blue-700">${item.QTD}</td>
+          <td class="p-3 font-semibold">${item.ENDEREÇO}</td><td class="p-3 text-xs">${item.LOTE}</td><td class="p-3 text-xs">${item.VALIDADE}</td>
+          <td class="p-3 text-center"><button onclick="removerItem(${index})" class="text-red-500 font-bold px-2">X</button></td></tr>`;
+      });
       atualizarDashboard();
     };
 
     document.getElementById('btn-limpar').addEventListener('click', () => {
-      if (!confirm("Tem certeza que deseja limpar toda a lista? Os saldos utilizados serão devolvidos à memória e você poderá processá-los novamente.")) return;
+      if (!confirm("Limpar toda a lista e restaurar saldos?")) return;
       etiquetasExportar.forEach(item => {
-        const lotesDisponiveis = estoquePorEndereco[item._chaveSaldo];
-        if (lotesDisponiveis) {
-          const loteOriginal = lotesDisponiveis.find(l => l.lote === item._lote && l.validade === item._validade);
-          if (loteOriginal) {
-            loteOriginal.saldoAtual += item.QTD;
-          }
-        }
+        const l = (estoquePorEndereco[item._chaveSaldo] || []).find(l => l.lote === item._lote && l.validade === item._validade);
+        if(l) l.saldoAtual += item.QTD;
       });
-      etiquetasExportar = [];
-      atualizarTabela();
-      mostrarMensagem('Lista limpa com sucesso. Saldos restaurados.', 'sucesso');
+      etiquetasExportar = []; atualizarTabela();
     });
-
-    // FUNÇÃO QUE SALVA NO FIREBASE
-    async function salvarHistoricoNoFirebase(etiquetas) {
-      try {
-        const btn = document.getElementById('btn-exportar');
-        btn.textContent = "Salvando...";
-        
-        const totalUnidades = etiquetas.reduce((acc, curr) => acc + curr.QTD, 0);
-
-        await addDoc(collection(db, "historico_etiquetas"), {
-          data_geracao: serverTimestamp(),
-          total_etiquetas: etiquetas.length,
-          total_unidades: totalUnidades,
-          produtos: etiquetas.map(e => ({
-            codigo: e.CÓDIGO,
-            codigo_localizador: e["CÓD. LOCALIZADOR"],
-            descricao: e.DESCRIÇÃO,
-            quantidade: e.QTD,
-            endereco: e.ENDEREÇO,
-            lote: e.LOTE
-          }))
-        });
-        console.log("Histórico salvo no Firebase com sucesso.");
-      } catch (e) {
-        console.error("Erro ao salvar no Firebase: ", e);
-        mostrarMensagem('Atenção: O arquivo Excel será gerado, mas ocorreu um erro ao salvar o histórico online.', 'erro');
-      } finally {
-        document.getElementById('btn-exportar').textContent = "Gerar Arquivo (.xls)";
-      }
-    }
 
     document.getElementById('btn-exportar').addEventListener('click', async () => {
       if (etiquetasExportar.length === 0) return;
+      const btn = document.getElementById('btn-exportar'); btn.textContent = "Salvando...";
+      try {
+        await addDoc(collection(db, "historico_etiquetas"), {
+          data_geracao: serverTimestamp(), total_etiquetas: etiquetasExportar.length,
+          total_unidades: etiquetasExportar.reduce((a, c) => a + c.QTD, 0),
+          produtos: etiquetasExportar.map(e => ({ codigo: e.CÓDIGO, descricao: e.DESCRIÇÃO, quantidade: e.QTD, endereco: e.ENDEREÇO, lote: e.LOTE }))
+        });
+      } catch (e) { console.error(e); } finally { btn.textContent = "Gerar Arquivo (.xls)"; }
 
-      // 1. Salva no banco de dados primeiro
-      await salvarHistoricoNoFirebase(etiquetasExportar);
+      const dadosLimpos = etiquetasExportar.map(e => ({ CÓDIGO: e.CÓDIGO, "CÓD. LOCALIZADOR": e["CÓD. LOCALIZADOR"], DESCRIÇÃO: e.DESCRIÇÃO, QTD: e.QTD, ENDEREÇO: e.ENDEREÇO, LOTE: e.LOTE, VALIDADE: e.VALIDADE }));
+      const ws = window.XLSX.utils.json_to_sheet(dadosLimpos); const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, "Etiquetas"); window.XLSX.writeFile(wb, "Etiquetas_Exportadas.xls", { bookType: 'xls' });
+      mostrarMensagem('Exportado e salvo no banco!', 'sucesso');
+    });
 
-      // 2. Exporta o arquivo
-      const dadosLimpos = etiquetasExportar.map(e => ({
-        CÓDIGO: e.CÓDIGO,
-        "CÓD. LOCALIZADOR": e["CÓD. LOCALIZADOR"],
-        DESCRIÇÃO: e.DESCRIÇÃO,
-        QTD: e.QTD,
-        ENDEREÇO: e.ENDEREÇO,
-        LOTE: e.LOTE,
-        VALIDADE: e.VALIDADE
-      }));
+    // ----------------------------------------------------
+    // 5. LÓGICA DO MÓDULO DE RELATÓRIOS
+    // ----------------------------------------------------
+    const modalRelatorio = document.getElementById('modal-relatorio');
+    document.getElementById('btn-abrir-relatorio').addEventListener('click', () => {
+      // Define a data de hoje como padrão nos campos ao abrir
+      const hoje = new Date().toISOString().split('T')[0];
+      document.getElementById('filtro-data-inicio').value = hoje;
+      document.getElementById('filtro-data-fim').value = hoje;
+      modalRelatorio.classList.remove('hidden');
+      modalRelatorio.classList.add('flex');
+    });
 
-      const worksheet = window.XLSX.utils.json_to_sheet(dadosLimpos);
-      const workbook = window.XLSX.utils.book_new();
-      window.XLSX.utils.book_append_sheet(workbook, worksheet, "Etiquetas");
-      
-      window.XLSX.writeFile(workbook, "Etiquetas_Exportadas.xls", { bookType: 'xls' });
-      mostrarMensagem('Arquivo exportado e histórico salvo online com sucesso!', 'sucesso');
+    document.getElementById('btn-fechar-relatorio').addEventListener('click', () => {
+      modalRelatorio.classList.add('hidden');
+      modalRelatorio.classList.remove('flex');
+    });
+
+    document.getElementById('btn-buscar-relatorio').addEventListener('click', async () => {
+      const dataInicio = document.getElementById('filtro-data-inicio').value;
+      const dataFim = document.getElementById('filtro-data-fim').value;
+
+      if(!dataInicio || !dataFim) {
+        alert("Preencha a Data Inicial e Final!"); return;
+      }
+
+      const statusMsg = document.getElementById('relatorio-status');
+      const painelResultados = document.getElementById('relatorio-resultados');
+      statusMsg.classList.remove('hidden');
+      painelResultados.classList.add('hidden');
+
+      try {
+        // Criar limites de data (De 00:00:00 até 23:59:59)
+        const start = new Date(`${dataInicio}T00:00:00`);
+        const end = new Date(`${dataFim}T23:59:59`);
+
+        const q = query(
+          collection(db, "historico_etiquetas"),
+          where("data_geracao", ">=", start),
+          where("data_geracao", "<=", end)
+          // orderBy("data_geracao", "desc") // Removido orderBy composto para evitar erro de índice no Firebase inicial
+        );
+
+        const querySnapshot = await getDocs(q);
+        
+        let somaTotalUnidades = 0;
+        let somaTotalEtiquetas = 0;
+        let setoresRelatorio = {};
+        const listaDetalhamento = [];
+
+        querySnapshot.forEach((doc) => {
+          const dados = doc.data();
+          somaTotalUnidades += dados.total_unidades || 0;
+          somaTotalEtiquetas += dados.total_etiquetas || 0;
+          
+          // Formatar a Data para exibição
+          const dataDoc = dados.data_geracao ? dados.data_geracao.toDate() : new Date();
+          const dataStr = dataDoc.toLocaleDateString('pt-BR') + " " + dataDoc.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+          // Processar os produtos gerados neste lote
+          if (dados.produtos && Array.isArray(dados.produtos)) {
+            dados.produtos.forEach(prod => {
+              // Somar para o Ranking de Setor
+              const setor = prod.endereco ? prod.endereco.split('-')[0] : 'N/D';
+              setoresRelatorio[setor] = (setoresRelatorio[setor] || 0) + prod.quantidade;
+              
+              // Adicionar à lista da tabela
+              listaDetalhamento.push({
+                dataHora: dataStr,
+                timestamp: dataDoc.getTime(), // para ordenar a tabela
+                codigo: prod.codigo,
+                descricao: prod.descricao,
+                qtd: prod.quantidade,
+                endereco: prod.endereco
+              });
+            });
+          }
+        });
+
+        // Ordenar detalhamento do mais recente pro mais antigo
+        listaDetalhamento.sort((a, b) => b.timestamp - a.timestamp);
+
+        // Preencher Dashboard do Relatório
+        document.getElementById('rel-total-unidades').textContent = somaTotalUnidades;
+        document.getElementById('rel-total-etiquetas').textContent = somaTotalEtiquetas;
+
+        const ulSetores = document.getElementById('rel-setores');
+        ulSetores.innerHTML = '';
+        const arrSetores = Object.entries(setoresRelatorio).sort((a, b) => b[1] - a[1]);
+        if (arrSetores.length === 0) ulSetores.innerHTML = '<li class="text-purple-400 italic">Nenhum dado no período</li>';
+        else arrSetores.forEach(([s, q]) => ulSetores.innerHTML += `<li class="flex justify-between border-b border-purple-100 py-1"><span class="font-bold text-purple-900">${s}</span><span class="bg-purple-200 text-xs py-1 px-2 rounded-full">${q} un</span></li>`);
+
+        // Preencher Tabela
+        const tbodyRel = document.getElementById('relatorio-tabela-corpo');
+        tbodyRel.innerHTML = '';
+        if (listaDetalhamento.length === 0) {
+          tbodyRel.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500 italic">Nenhum apontamento encontrado nas datas selecionadas.</td></tr>';
+        } else {
+          listaDetalhamento.forEach(item => {
+            tbodyRel.innerHTML += `
+              <tr class="border-b hover:bg-gray-50">
+                <td class="p-2 whitespace-nowrap">${item.dataHora}</td>
+                <td class="p-2 font-semibold">${item.codigo}</td>
+                <td class="p-2 truncate max-w-[200px]" title="${item.descricao}">${item.descricao}</td>
+                <td class="p-2 font-bold text-blue-700">${item.qtd}</td>
+                <td class="p-2">${item.endereco}</td>
+              </tr>
+            `;
+          });
+        }
+
+        statusMsg.classList.add('hidden');
+        painelResultados.classList.remove('hidden');
+        painelResultados.classList.add('flex');
+
+      } catch (error) {
+        console.error("Erro na busca do relatório:", error);
+        statusMsg.textContent = "Erro ao buscar dados. Verifique a conexão.";
+        statusMsg.classList.add('text-red-600');
+      }
     });
   </script>
 </body>
