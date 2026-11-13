@@ -175,13 +175,9 @@
   </div>
 
   <script type="module">
-    // ----------------------------------------------------
-    // 1. IMPORTAÇÕES E CONFIGURAÇÃO FIREBASE
-    // ----------------------------------------------------
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
-    // >>> ATENÇÃO RENATO: COLE AS SUAS CHAVES REAIS AQUI ANTES DE SUBIR PRO GITHUB <<<
     const firebaseConfig = {
       apiKey: "AIzaSyCyURjYydkNxRRqP0CUMakqVWAXRVhqabM",
       authDomain: "etiquetas-logistica.firebaseapp.com",
@@ -194,14 +190,10 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ----------------------------------------------------
-    // 2. VARIÁVEIS GLOBAIS (Sistema Principal)
-    // ----------------------------------------------------
     let ressuprimentoData = [];
     let etiquetasExportar = [];
     let estoquePorEndereco = {}; 
 
-    // Funções Utilitárias e Excel
     const normalizarChave = (chave) => chave ? chave.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase() : '';
     
     const formatarValidade = (dataVal) => {
@@ -218,15 +210,33 @@
       return val;
     };
 
+    // Leitura híbrida: lê datas nativas (raw: true) E texto exato formatado (raw: false) para preservar zeros à esquerda e espaços do lote
     const lerExcel = (file, callback) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const data = new Uint8Array(e.target.result);
         const workbook = window.XLSX.read(data, { type: 'array', cellDates: true });
-        const rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: true });
-        const normalizedRows = rows.map(row => {
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        
+        const rowsRaw = window.XLSX.utils.sheet_to_json(sheet, { raw: true, defval: "" });
+        const rowsFormatted = window.XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
+
+        const normalizedRows = rowsRaw.map((row, idx) => {
           const newRow = {};
-          Object.keys(row).forEach(key => { newRow[normalizarChave(key)] = row[key]; });
+          const formattedRow = rowsFormatted[idx] || {};
+          
+          Object.keys(row).forEach(key => {
+            const normKey = normalizarChave(key);
+            // Para LOTE e CODIGO LOCALIZADOR, pega o texto exato da célula sem perder zeros/espaços
+            if (normKey === "LOTE" || normKey === "CODIGO LOCALIZADOR") {
+              const valFormatado = formattedRow[key] !== undefined && formattedRow[key] !== "" 
+                ? String(formattedRow[key]) 
+                : (row[key] !== undefined && row[key] !== null ? String(row[key]) : "");
+              newRow[normKey] = valFormatado;
+            } else {
+              newRow[normKey] = row[key];
+            }
+          });
           return newRow;
         });
         callback(normalizedRows);
@@ -234,9 +244,6 @@
       reader.readAsArrayBuffer(file);
     };
 
-    // ----------------------------------------------------
-    // 3. EVENTOS DE UPLOAD E LEITURA
-    // ----------------------------------------------------
     const verificarLiberacaoInput = () => {
       if (ressuprimentoData.length > 0 && Object.keys(estoquePorEndereco).length > 0) {
         document.getElementById('input-codigo').disabled = false;
@@ -261,9 +268,21 @@
       lerExcel(e.target.files[0], (data) => {
         estoquePorEndereco = {};
         data.forEach(item => {
-          const codigo = String(item["PRODUTO"]).trim(); const endereco = String(item["LOCALIZADOR"]).trim();
-          const saldo = parseFloat(item["SALDO"]) || 0; const lote = item["LOTE"] || "N/D";
-          const validade = formatarValidade(item["VALIDADE"]); const codigoLocalizador = item["CODIGO LOCALIZADOR"] || "N/D";
+          const codigo = String(item["PRODUTO"]).trim(); 
+          const endereco = String(item["LOCALIZADOR"]).trim();
+          const saldo = parseFloat(item["SALDO"]) || 0;
+          
+          // Aceita "0", "00", "0000", "0123", " 0123", etc. Só vira N/D se estiver realmente vazio
+          const loteBruto = item["LOTE"];
+          const lote = (loteBruto !== undefined && loteBruto !== null && String(loteBruto) !== "") 
+            ? String(loteBruto) 
+            : "N/D";
+
+          const validade = formatarValidade(item["VALIDADE"]); 
+          const codigoLocalizador = (item["CODIGO LOCALIZADOR"] !== undefined && String(item["CODIGO LOCALIZADOR"]) !== "") 
+            ? String(item["CODIGO LOCALIZADOR"]) 
+            : "N/D";
+
           if(codigo && endereco && saldo > 0) {
             const key = `${codigo}-${endereco}`;
             if(!estoquePorEndereco[key]) estoquePorEndereco[key] = [];
@@ -284,18 +303,15 @@
       div.style.display = 'block'; setTimeout(() => { div.style.display = 'none'; }, 8000); 
     };
 
-    // ----------------------------------------------------
-    // 4. LÓGICA DE ADIÇÃO E TABELA
-    // ----------------------------------------------------
     document.getElementById('btn-adicionar').addEventListener('click', () => {
       const codigoInput = document.getElementById('input-codigo').value.trim();
       const qtdInputText = document.getElementById('input-qtd').value.trim();
       if (!codigoInput) return;
 
-      const itemRessup = ressuprimentoData.find(r => String(r["PRODUTO"]) === String(codigoInput));
+      const itemRessup = ressuprimentoData.find(r => String(r["PRODUTO"]).trim() === String(codigoInput));
       if (!itemRessup) return mostrarMensagem(`Código ${codigoInput} não encontrado na planilha de Ressuprimento.`);
       
-      const enderecoRessup = itemRessup["ENDERECO"] || itemRessup["ENDEREÇO"]; 
+      const enderecoRessup = String(itemRessup["ENDERECO"] || itemRessup["ENDEREÇO"]).trim(); 
       const descRessup = itemRessup["DESCRICAO"] || itemRessup["DESCRIÇÃO"];
       const qtdSolicitada = qtdInputText !== "" ? parseFloat(qtdInputText) : parseFloat(itemRessup["QTDE PEDIDA"] || itemRessup["QTD"] || 0);
 
@@ -359,7 +375,7 @@
         tbody.innerHTML += `<tr class="border-b hover:bg-gray-50 bg-white">
           <td class="p-3">${item.CÓDIGO}</td><td class="p-3 text-xs text-gray-500 font-mono">${item["CÓD. LOCALIZADOR"]}</td>
           <td class="p-3 truncate max-w-[200px]" title="${item.DESCRIÇÃO}">${item.DESCRIÇÃO}</td><td class="p-3 font-bold text-blue-700">${item.QTD}</td>
-          <td class="p-3 font-semibold">${item.ENDEREÇO}</td><td class="p-3 text-xs">${item.LOTE}</td><td class="p-3 text-xs">${item.VALIDADE}</td>
+          <td class="p-3 font-semibold">${item.ENDEREÇO}</td><td class="p-3 text-xs font-mono whitespace-pre">${item.LOTE}</td><td class="p-3 text-xs">${item.VALIDADE}</td>
           <td class="p-3 text-center"><button onclick="removerItem(${index})" class="text-red-500 font-bold px-2">X</button></td></tr>`;
       });
       atualizarDashboard();
@@ -385,18 +401,37 @@
         });
       } catch (e) { console.error(e); } finally { btn.textContent = "Gerar Arquivo (.xls)"; }
 
-      const dadosLimpos = etiquetasExportar.map(e => ({ CÓDIGO: e.CÓDIGO, "CÓD. LOCALIZADOR": e["CÓD. LOCALIZADOR"], DESCRIÇÃO: e.DESCRIÇÃO, QTD: e.QTD, ENDEREÇO: e.ENDEREÇO, LOTE: e.LOTE, VALIDADE: e.VALIDADE }));
-      const ws = window.XLSX.utils.json_to_sheet(dadosLimpos); const wb = window.XLSX.utils.book_new();
-      window.XLSX.utils.book_append_sheet(wb, ws, "Etiquetas"); window.XLSX.writeFile(wb, "Etiquetas_Exportadas.xls", { bookType: 'xls' });
+      const dadosLimpos = etiquetasExportar.map(e => ({ 
+        CÓDIGO: e.CÓDIGO, 
+        "CÓD. LOCALIZADOR": String(e["CÓD. LOCALIZADOR"]), 
+        DESCRIÇÃO: e.DESCRIÇÃO, 
+        QTD: e.QTD, 
+        ENDEREÇO: e.ENDEREÇO, 
+        LOTE: String(e.LOTE), 
+        VALIDADE: e.VALIDADE 
+      }));
+      
+      const ws = window.XLSX.utils.json_to_sheet(dadosLimpos);
+      
+      // Garante que as células da coluna LOTE (coluna F) e CÓD. LOCALIZADOR (coluna B) sejam salvas como Texto puro no Excel
+      const range = window.XLSX.utils.decode_range(ws['!ref']);
+      for (let R = 1; R <= range.e.r; ++R) {
+        const cellLoc = ws[window.XLSX.utils.encode_cell({ r: R, c: 1 })];
+        if (cellLoc) { cellLoc.t = 's'; cellLoc.v = String(cellLoc.v); }
+        
+        const cellLote = ws[window.XLSX.utils.encode_cell({ r: R, c: 5 })];
+        if (cellLote) { cellLote.t = 's'; cellLote.v = String(cellLote.v); }
+      }
+
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, "Etiquetas"); 
+      window.XLSX.writeFile(wb, "Etiquetas_Exportadas.xls", { bookType: 'xls' });
       mostrarMensagem('Exportado e salvo no banco!', 'sucesso');
     });
 
-    // ----------------------------------------------------
-    // 5. LÓGICA DO MÓDULO DE RELATÓRIOS
-    // ----------------------------------------------------
+    // Lógica do Módulo de Relatórios
     const modalRelatorio = document.getElementById('modal-relatorio');
     document.getElementById('btn-abrir-relatorio').addEventListener('click', () => {
-      // Define a data de hoje como padrão nos campos ao abrir
       const hoje = new Date().toISOString().split('T')[0];
       document.getElementById('filtro-data-inicio').value = hoje;
       document.getElementById('filtro-data-fim').value = hoje;
@@ -423,7 +458,6 @@
       painelResultados.classList.add('hidden');
 
       try {
-        // Criar limites de data (De 00:00:00 até 23:59:59)
         const start = new Date(`${dataInicio}T00:00:00`);
         const end = new Date(`${dataFim}T23:59:59`);
 
@@ -431,7 +465,6 @@
           collection(db, "historico_etiquetas"),
           where("data_geracao", ">=", start),
           where("data_geracao", "<=", end)
-          // orderBy("data_geracao", "desc") // Removido orderBy composto para evitar erro de índice no Firebase inicial
         );
 
         const querySnapshot = await getDocs(q);
@@ -446,21 +479,17 @@
           somaTotalUnidades += dados.total_unidades || 0;
           somaTotalEtiquetas += dados.total_etiquetas || 0;
           
-          // Formatar a Data para exibição
           const dataDoc = dados.data_geracao ? dados.data_geracao.toDate() : new Date();
           const dataStr = dataDoc.toLocaleDateString('pt-BR') + " " + dataDoc.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
 
-          // Processar os produtos gerados neste lote
           if (dados.produtos && Array.isArray(dados.produtos)) {
             dados.produtos.forEach(prod => {
-              // Somar para o Ranking de Setor
               const setor = prod.endereco ? prod.endereco.split('-')[0] : 'N/D';
               setoresRelatorio[setor] = (setoresRelatorio[setor] || 0) + prod.quantidade;
               
-              // Adicionar à lista da tabela
               listaDetalhamento.push({
                 dataHora: dataStr,
-                timestamp: dataDoc.getTime(), // para ordenar a tabela
+                timestamp: dataDoc.getTime(),
                 codigo: prod.codigo,
                 descricao: prod.descricao,
                 qtd: prod.quantidade,
@@ -470,10 +499,8 @@
           }
         });
 
-        // Ordenar detalhamento do mais recente pro mais antigo
         listaDetalhamento.sort((a, b) => b.timestamp - a.timestamp);
 
-        // Preencher Dashboard do Relatório
         document.getElementById('rel-total-unidades').textContent = somaTotalUnidades;
         document.getElementById('rel-total-etiquetas').textContent = somaTotalEtiquetas;
 
@@ -483,7 +510,6 @@
         if (arrSetores.length === 0) ulSetores.innerHTML = '<li class="text-purple-400 italic">Nenhum dado no período</li>';
         else arrSetores.forEach(([s, q]) => ulSetores.innerHTML += `<li class="flex justify-between border-b border-purple-100 py-1"><span class="font-bold text-purple-900">${s}</span><span class="bg-purple-200 text-xs py-1 px-2 rounded-full">${q} un</span></li>`);
 
-        // Preencher Tabela
         const tbodyRel = document.getElementById('relatorio-tabela-corpo');
         tbodyRel.innerHTML = '';
         if (listaDetalhamento.length === 0) {
