@@ -2,140 +2,340 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Sistema de Geração de Etiquetas - CD Venâncio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WMS Integrado - Mapa de Atendimento & Etiquetas</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .modal-wms { display: none; background-color: rgba(0, 0, 0, 0.5); }
+    .modal-wms.active { display: flex; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
 </head>
-<body class="bg-gray-100 p-8 font-sans">
-  <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
-    
-    <!-- Cabeçalho -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-blue-800">Geração de Etiquetas - Ressuprimento</h1>
-        <span class="text-sm bg-blue-100 text-blue-800 py-1 px-3 rounded-full font-semibold mt-2 inline-block">Versão c/ BD e Relatórios</span>
-      </div>
-      <button id="btn-abrir-relatorio" class="bg-purple-600 text-white font-bold px-4 py-2 rounded shadow hover:bg-purple-700 transition">
-        📊 Histórico e Relatórios
-      </button>
-    </div>
+<body class="text-gray-800 min-h-screen flex flex-col">
 
-    <!-- Exibição de Mensagens de Erro/Alerta -->
-    <div id="mensagem-alerta" class="hidden mb-4 p-4 rounded-md font-semibold"></div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      
-      <!-- Passo 1: Importar Planilhas -->
-      <div class="border p-4 rounded bg-gray-50 shadow-sm">
-        <h2 class="text-lg font-semibold mb-4 text-gray-700">1. Importar Planilhas</h2>
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-600 mb-1">Planilha de Ressuprimento</label>
-          <input type="file" id="upload-ressuprimento" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-          <p id="status-ressuprimento" class="text-xs text-red-500 mt-1">Aguardando arquivo...</p>
-        </div>
+  <!-- Cabeçalho Unificado -->
+  <header class="bg-blue-900 text-white shadow-md shrink-0">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-warehouse fa-2x text-blue-300"></i>
         <div>
-          <label class="block text-sm font-medium text-gray-600 mb-1">Planilha Saldo de Estoque</label>
-          <input type="file" id="upload-saldo" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-          <p id="status-saldo" class="text-xs text-red-500 mt-1">Aguardando arquivo...</p>
+          <h1 class="text-xl font-bold tracking-tight">WMS | Central de Ressuprimento</h1>
+          <p class="text-xs text-blue-200">Gestão de Atendimento, Pendências e Geração de Etiquetas</p>
         </div>
       </div>
 
-      <!-- Passo 2: Inserir Produtos -->
-      <div class="border p-4 rounded bg-gray-50 shadow-sm">
-        <h2 class="text-lg font-semibold mb-4 text-gray-700">2. Inserir Produtos</h2>
-        <div class="flex gap-2 mb-2">
-          <input type="number" id="input-codigo" placeholder="Código do Produto" class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
-          <input type="number" id="input-qtd" placeholder="Qtd (Opcional)" class="w-32 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" disabled title="Deixe em branco para usar a qtd da planilha">
-          <button id="btn-adicionar" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition" disabled>Adicionar</button>
+      <!-- Navegação por Abas -->
+      <nav class="flex bg-blue-950 p-1 rounded-lg border border-blue-700">
+        <button id="tab-btn-mapa" onclick="switchTab('mapa')" class="px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow">
+          <i class="fas fa-chart-pie"></i> Mapa de Atendimento
+        </button>
+        <button id="tab-btn-etiquetas" onclick="switchTab('etiquetas')" class="px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 text-blue-200 hover:text-white">
+          <i class="fas fa-tags"></i> Gerador de Etiquetas
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Barra Unificada de Importação de Planilhas (Alimenta os 2 módulos simultaneamente) -->
+  <section class="bg-white border-b shadow-sm shrink-0">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full lg:w-auto flex-1">
+          <!-- Ressuprimento -->
+          <div class="flex items-center gap-3 border rounded-lg px-3 py-2 bg-gray-50">
+            <i class="fas fa-file-excel text-green-600 text-xl"></i>
+            <div class="flex-1 min-w-0">
+              <label class="block text-xs font-bold text-gray-700 uppercase">1. Planilha Ressuprimento</label>
+              <input type="file" id="global-file-ressup" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer mt-0.5">
+            </div>
+            <span id="badge-ressup" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600">Pendente</span>
+          </div>
+
+          <!-- Saldo de Estoque -->
+          <div class="flex items-center gap-3 border rounded-lg px-3 py-2 bg-gray-50">
+            <i class="fas fa-boxes text-blue-600 text-xl"></i>
+            <div class="flex-1 min-w-0">
+              <label class="block text-xs font-bold text-gray-700 uppercase">2. Saldo de Estoque</label>
+              <input type="file" id="global-file-saldo" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer mt-0.5">
+            </div>
+            <span id="badge-saldo" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600">Pendente</span>
+          </div>
         </div>
-        <p class="text-xs text-gray-500">Importe as planilhas para liberar a digitação.</p>
+
+        <div class="flex items-center gap-3 w-full lg:w-auto justify-end">
+          <span id="global-status" class="text-xs font-medium text-gray-500">Carregue as duas planilhas para iniciar</span>
+          <button id="btn-processar-tudo" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 px-5 rounded-lg transition shadow flex items-center gap-2 shrink-0">
+            <i class="fas fa-sync-alt"></i> Processar Base
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Alerta Flutuante Global -->
+  <div id="global-alert" class="max-w-7xl mx-auto w-full px-4 mt-4 hidden">
+    <div id="global-alert-box" class="p-3 rounded-lg font-semibold text-sm shadow-sm flex justify-between items-center">
+      <span id="global-alert-text"></span>
+      <button onclick="document.getElementById('global-alert').classList.add('hidden')" class="font-bold ml-4">&times;</button>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- ABA 1: MAPA DE ATENDIMENTO DE RESSUPRIMENTO                           -->
+  <!-- ===================================================================== -->
+  <main id="view-mapa" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
+    
+    <!-- Bloco 0: Resumo do Mapa -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-lg shadow p-4 border-l-4 border-indigo-500 flex items-center justify-between">
+        <div><p class="text-xs text-gray-500 font-bold uppercase">Total Mapas</p><p class="text-2xl font-bold text-indigo-700" id="val-mapas">0</p></div>
+        <i class="fas fa-map text-indigo-200 text-3xl"></i>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500 flex items-center justify-between">
+        <div><p class="text-xs text-gray-500 font-bold uppercase">Total Acessos (Itens)</p><p class="text-2xl font-bold text-purple-700" id="val-acessos">0</p></div>
+        <i class="fas fa-list-ol text-purple-200 text-3xl"></i>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4 border-l-4 border-pink-500 flex items-center justify-between">
+        <div><p class="text-xs text-gray-500 font-bold uppercase">Qtd Pedida (Volumes)</p><p class="text-2xl font-bold text-pink-700" id="val-volumes">0</p></div>
+        <i class="fas fa-box-open text-pink-200 text-3xl"></i>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4 border-l-4 border-emerald-500 flex items-center justify-between">
+        <div><p class="text-xs text-gray-500 font-bold uppercase">Qtd Pedida (CX)</p><p class="text-2xl font-bold text-emerald-700" id="val-caixas">0</p></div>
+        <i class="fas fa-boxes text-emerald-200 text-3xl"></i>
       </div>
     </div>
 
-    <!-- Dashboard Atual (Em Memória) -->
-    <h2 class="text-lg font-semibold mb-3 text-gray-700">Painel de Produtividade (Sessão Atual)</h2>
+    <!-- Bloco 1: Métricas de Atendimento -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg flex flex-col justify-center items-center shadow-sm">
-        <h3 class="text-sm font-bold text-blue-800 uppercase tracking-wider mb-1">Unidades Geradas</h3>
-        <p id="dash-total-unidades" class="text-4xl font-black text-blue-600">0</p>
+      <div class="bg-white rounded-lg shadow p-4 text-center border-t-4 border-blue-500">
+        <p class="text-xs text-gray-500 font-bold uppercase mb-1">Total Pedido (Un.)</p>
+        <p class="text-3xl font-bold text-blue-600" id="val-pedido">0</p>
       </div>
-      <div class="bg-green-50 border border-green-200 p-4 rounded-lg flex flex-col justify-center items-center shadow-sm">
-        <h3 class="text-sm font-bold text-green-800 uppercase tracking-wider mb-1">Qtd. de Etiquetas</h3>
-        <p id="dash-total-etiquetas" class="text-4xl font-black text-green-600">0</p>
+      <div class="bg-white rounded-lg shadow p-4 text-center border-t-4 border-green-500">
+        <p class="text-xs text-gray-500 font-bold uppercase mb-1">Total Atendido (Un.)</p>
+        <p class="text-3xl font-bold text-green-600" id="val-atendido">0</p>
       </div>
-      <div class="bg-purple-50 border border-purple-200 p-4 rounded-lg shadow-sm">
-        <h3 class="text-sm font-bold text-purple-800 uppercase tracking-wider mb-2">Top Setores (Sessão)</h3>
-        <div class="max-h-24 overflow-y-auto pr-2">
-          <ul id="dash-setores" class="text-sm text-purple-900 space-y-1 font-medium">
-            <li class="text-purple-400 italic">Nenhum dado processado</li>
-          </ul>
-        </div>
+      <div class="bg-white rounded-lg shadow p-4 text-center border-t-4 border-orange-500">
+        <p class="text-xs text-gray-500 font-bold uppercase mb-1">Total Pendente (Un.)</p>
+        <p class="text-3xl font-bold text-orange-600" id="val-pendente-global">0</p>
       </div>
     </div>
 
-    <!-- Passo 3: Lista de Produtos e Exportação -->
-    <div class="border p-4 rounded shadow-sm bg-white">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-semibold text-gray-700">Lista para Exportação</h2>
+    <!-- Bloco 2: Status de Separação (Pendências) -->
+    <h2 class="text-lg font-semibold text-gray-700 mb-3">Status de Separação (Unidades Pendentes — Clique nos cards para detalhar)</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-lg shadow p-5 border-l-4 border-gray-400 cursor-pointer hover:bg-gray-50 transition" onclick="openWmsModal('somente_origem')">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-sm font-semibold text-gray-600">Somente na Origem</h3>
+          <i class="fas fa-box text-gray-300"></i>
+        </div>
+        <p class="text-3xl font-bold text-gray-700" id="ind-origem">0</p>
+        <p class="text-xs text-gray-400 mt-1">Unidades Pendentes</p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-5 border-l-4 border-blue-500 cursor-pointer hover:bg-blue-50 transition" onclick="openWmsModal('outros')">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-sm font-semibold text-blue-600">Com Outros Endereços</h3>
+          <i class="fas fa-search-location text-blue-300"></i>
+        </div>
+        <p class="text-3xl font-bold text-blue-600" id="ind-outros">0</p>
+        <p class="text-xs text-gray-400 mt-1">Unidades Pendentes</p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-5 border-l-4 border-yellow-500 cursor-pointer hover:bg-yellow-50 transition" onclick="openWmsModal('picking_reserva')">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-sm font-semibold text-yellow-600">Picking Reserva</h3>
+          <i class="fas fa-archive text-yellow-300"></i>
+        </div>
+        <p class="text-3xl font-bold text-yellow-600" id="ind-picking-res">0</p>
+        <p class="text-xs text-gray-400 mt-1">Unidades Pendentes</p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-5 border-l-4 border-red-500 cursor-pointer hover:bg-red-50 transition" onclick="openWmsModal('negativo')">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-sm font-semibold text-red-600">Saldo Negativo (Alerta)</h3>
+          <i class="fas fa-exclamation-triangle text-red-300"></i>
+        </div>
+        <p class="text-3xl font-bold text-red-600" id="ind-negativo">0</p>
+        <p class="text-xs text-gray-400 mt-1">Unidades Pendentes</p>
+      </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="bg-white rounded-lg shadow p-4 h-80 flex flex-col items-center">
+        <h3 class="text-sm font-semibold text-gray-700 w-full mb-2">Distribuição de Unidades Pendentes</h3>
+        <div class="relative w-full h-full flex justify-center pb-4">
+          <canvas id="chartStatus"></canvas>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4 h-80 flex flex-col items-center">
+        <h3 class="text-sm font-semibold text-gray-700 w-full mb-2">Performance Global (Atendido x Pendente)</h3>
+        <div class="relative w-full h-full flex justify-center pb-4">
+          <canvas id="chartPerformance"></canvas>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- ABA 2: GERADOR DE ETIQUETAS DE RESSUPRIMENTO                          -->
+  <!-- ===================================================================== -->
+  <main id="view-etiquetas" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 hidden">
+    <div class="bg-white p-6 rounded-lg shadow">
+      
+      <!-- Cabeçalho da Aba Etiquetas -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 mb-6 gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-blue-900">Geração de Etiquetas (Multilotes & Split Automático)</h2>
+          <p class="text-xs text-gray-500">Utiliza automaticamente as planilhas importadas no topo da página</p>
+        </div>
+        <button id="btn-abrir-relatorio" class="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition flex items-center gap-2 text-sm">
+          <i class="fas fa-history"></i> Histórico e Relatórios (Firebase)
+        </button>
+      </div>
+
+      <!-- Inserção de Produtos + Apontadores da Sessão -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        
+        <!-- Card Inserção -->
+        <div class="lg:col-span-5 border p-4 rounded-lg bg-gray-50 flex flex-col justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-gray-700 uppercase mb-3"><i class="fas fa-barcode mr-1 text-blue-600"></i> Inserir Produto para Etiqueta</h3>
+            <div class="flex gap-2 mb-2">
+              <input type="number" id="input-codigo" placeholder="Código do Produto" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" disabled>
+              <input type="number" id="input-qtd" placeholder="Qtd (Opcional)" class="w-32 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" disabled title="Deixe em branco para usar a qtd da planilha">
+              <button id="btn-adicionar" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold transition" disabled>
+                Adicionar
+              </button>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">Processe as planilhas no topo para liberar. Deixe a Qtd vazia para puxar o pedido total.</p>
+        </div>
+
+        <!-- Cards Indicadores da Sessão -->
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg flex flex-col justify-center items-center">
+            <h4 class="text-xs font-bold text-blue-800 uppercase mb-1">Unidades Geradas</h4>
+            <p id="dash-total-unidades" class="text-3xl font-black text-blue-600">0</p>
+          </div>
+          <div class="bg-green-50 border border-green-200 p-4 rounded-lg flex flex-col justify-center items-center">
+            <h4 class="text-xs font-bold text-green-800 uppercase mb-1">Qtd. Etiquetas</h4>
+            <p id="dash-total-etiquetas" class="text-3xl font-black text-green-600">0</p>
+          </div>
+          <div class="bg-purple-50 border border-purple-200 p-3 rounded-lg">
+            <h4 class="text-xs font-bold text-purple-800 uppercase mb-1">Top Setores (Sessão)</h4>
+            <div class="max-h-20 overflow-y-auto pr-1">
+              <ul id="dash-setores" class="text-xs text-purple-900 space-y-1 font-medium">
+                <li class="text-purple-400 italic">Nenhum dado</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tabela de Etiquetas -->
+      <div class="border rounded-lg overflow-hidden">
+        <div class="bg-gray-50 px-4 py-3 border-b flex flex-wrap justify-between items-center gap-3">
+          <h3 class="font-bold text-gray-700 text-sm uppercase">Lista para Exportação</h3>
+          <div class="flex gap-2">
+            <button id="btn-limpar" class="bg-red-100 text-red-700 border border-red-300 px-3 py-1.5 rounded hover:bg-red-200 disabled:opacity-50 text-xs font-bold transition" disabled>
+              <i class="fas fa-trash-alt mr-1"></i> Limpar Lista
+            </button>
+            <button id="btn-exportar" class="bg-green-600 text-white px-4 py-1.5 rounded hover:bg-green-700 disabled:opacity-50 text-xs font-bold transition shadow-sm" disabled>
+              <i class="fas fa-file-export mr-1"></i> Gerar Arquivo (.xls) & Salvar
+            </button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left border-collapse">
+            <thead class="bg-gray-100 text-gray-700 text-xs uppercase">
+              <tr>
+                <th class="p-3 border-b">CÓDIGO</th>
+                <th class="p-3 border-b">CÓD. LOC.</th>
+                <th class="p-3 border-b">DESCRIÇÃO</th>
+                <th class="p-3 border-b">QTD</th>
+                <th class="p-3 border-b">ENDEREÇO</th>
+                <th class="p-3 border-b">LOTE</th>
+                <th class="p-3 border-b">VALIDADE</th>
+                <th class="p-3 border-b text-center">AÇÃO</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-corpo">
+              <tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: DETALHES DO MAPA DE ATENDIMENTO                              -->
+  <!-- ===================================================================== -->
+  <div id="modal-wms-backdrop" class="modal-wms fixed inset-0 z-40 items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl flex flex-col max-h-[90vh]">
+      <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
+        <h3 class="text-lg font-bold text-gray-800" id="modal-wms-title">Detalhes</h3>
         <div class="flex gap-3">
-          <button id="btn-limpar" class="bg-red-100 text-red-600 border border-red-300 px-4 py-2 rounded hover:bg-red-200 disabled:opacity-50 font-semibold transition" disabled>
-            Limpar Tudo
+          <button id="btn-wms-export" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-semibold shadow flex items-center gap-2">
+            <i class="fas fa-file-excel"></i> Exportar Excel
           </button>
-          <button id="btn-exportar" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 font-bold transition shadow-sm" disabled>
-            Gerar Arquivo (.xls)
+          <button onclick="closeWmsModal()" class="text-gray-500 hover:text-gray-800">
+            <i class="fas fa-times text-xl"></i>
           </button>
         </div>
       </div>
-      <div class="overflow-x-auto rounded-lg border border-gray-200">
-        <table class="w-full text-sm text-left border-collapse">
-          <thead class="bg-gray-100 text-gray-700">
-            <tr>
-              <th class="p-3 border-b">CÓDIGO</th>
-              <th class="p-3 border-b">CÓD. LOC.</th>
-              <th class="p-3 border-b">DESCRIÇÃO</th>
-              <th class="p-3 border-b">QTD</th>
-              <th class="p-3 border-b">ENDEREÇO</th>
-              <th class="p-3 border-b">LOTE</th>
-              <th class="p-3 border-b">VALIDADE</th>
-              <th class="p-3 border-b text-center">AÇÃO</th>
-            </tr>
+      <div class="p-0 overflow-y-auto flex-1">
+        <table class="min-w-full text-left text-sm border-collapse">
+          <thead class="bg-gray-100 sticky top-0 shadow-sm">
+            <tr id="modal-wms-thead"></tr>
           </thead>
-          <tbody id="tabela-corpo">
-            <tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>
-          </tbody>
+          <tbody class="divide-y divide-gray-200" id="modal-wms-tbody"></tbody>
         </table>
+      </div>
+      <div class="px-6 py-3 border-t bg-gray-50 text-right rounded-b-lg">
+        <button onclick="closeWmsModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-1.5 px-4 rounded">Fechar</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL DE RELATÓRIOS (Inicialmente Oculto) -->
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: RELATÓRIOS HISTÓRICOS DE ETIQUETAS (FIREBASE)                -->
+  <!-- ===================================================================== -->
   <div id="modal-relatorio" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl flex flex-col" style="max-height: 90vh;">
-      
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl flex flex-col max-h-[90vh]">
       <div class="flex justify-between items-center p-5 border-b bg-gray-50 rounded-t-lg">
-        <h2 class="text-xl font-bold text-gray-800">Relatório de Apontamentos</h2>
-        <button id="btn-fechar-relatorio" class="text-gray-500 hover:text-red-500 font-bold text-xl">&times;</button>
+        <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-chart-bar text-purple-600 mr-2"></i>Relatório de Apontamentos (Etiquetas)</h2>
+        <button id="btn-fechar-relatorio" class="text-gray-500 hover:text-red-500 font-bold text-2xl leading-none">&times;</button>
       </div>
       
       <div class="p-5 flex flex-col gap-4 overflow-y-auto">
-        <!-- Filtros de Data -->
         <div class="flex flex-wrap items-end gap-4 bg-gray-100 p-4 rounded-lg">
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Data Inicial</label>
-            <input type="date" id="filtro-data-inicio" class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Data Inicial</label>
+            <input type="date" id="filtro-data-inicio" class="px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
           </div>
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Data Final</label>
-            <input type="date" id="filtro-data-fim" class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Data Final</label>
+            <input type="date" id="filtro-data-fim" class="px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm">
           </div>
-          <button id="btn-buscar-relatorio" class="bg-purple-600 text-white px-5 py-2 rounded hover:bg-purple-700 font-bold transition">
-            Buscar Apontamentos
+          <button id="btn-buscar-relatorio" class="bg-purple-600 text-white px-5 py-2 rounded hover:bg-purple-700 font-bold transition text-sm">
+            <i class="fas fa-search mr-1"></i> Buscar Apontamentos
           </button>
         </div>
 
         <p id="relatorio-status" class="text-sm font-semibold text-blue-600 hidden">Buscando dados no servidor...</p>
 
-        <!-- Indicadores do Relatório -->
         <div id="relatorio-resultados" class="hidden flex-col gap-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-blue-50 border border-blue-200 p-4 rounded text-center">
@@ -148,12 +348,11 @@
             </div>
             <div class="bg-purple-50 border border-purple-200 p-4 rounded">
               <h4 class="text-xs font-bold text-purple-800 uppercase mb-2">Ranking de Setores (Período)</h4>
-              <ul id="rel-setores" class="text-sm space-y-1 max-h-20 overflow-y-auto"></ul>
+              <ul id="rel-setores" class="text-xs space-y-1 max-h-20 overflow-y-auto"></ul>
             </div>
           </div>
 
-          <!-- Tabela de Detalhes -->
-          <h3 class="font-bold text-gray-700 border-b pb-2 mt-4">Detalhamento dos Apontamentos</h3>
+          <h3 class="font-bold text-gray-700 border-b pb-2 mt-2 text-sm uppercase">Detalhamento dos Apontamentos</h3>
           <div class="overflow-x-auto border rounded max-h-64">
             <table class="w-full text-xs text-left">
               <thead class="bg-gray-100 text-gray-700 sticky top-0">
@@ -165,8 +364,7 @@
                   <th class="p-2 border-b">ENDEREÇO</th>
                 </tr>
               </thead>
-              <tbody id="relatorio-tabela-corpo">
-              </tbody>
+              <tbody id="relatorio-tabela-corpo"></tbody>
             </table>
           </div>
         </div>
@@ -174,6 +372,9 @@
     </div>
   </div>
 
+  <!-- ===================================================================== -->
+  <!-- SCRIPT UNIFICADO (MAPA WMS + GERADOR DE ETIQUETAS + FIREBASE)         -->
+  <!-- ===================================================================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
     import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
@@ -190,12 +391,60 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let ressuprimentoData = [];
-    let etiquetasExportar = [];
-    let estoquePorEndereco = {}; 
+    // -------------------------------------------------------------------------
+    // CONTROLE DE ABAS
+    // -------------------------------------------------------------------------
+    window.switchTab = (tabName) => {
+      const viewMapa = document.getElementById('view-mapa');
+      const viewEtiquetas = document.getElementById('view-etiquetas');
+      const btnMapa = document.getElementById('tab-btn-mapa');
+      const btnEtiquetas = document.getElementById('tab-btn-etiquetas');
 
-    const normalizarChave = (chave) => chave ? chave.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase() : '';
-    
+      if (tabName === 'mapa') {
+        viewMapa.classList.remove('hidden');
+        viewEtiquetas.classList.add('hidden');
+        btnMapa.className = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow";
+        btnEtiquetas.className = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 text-blue-200 hover:text-white";
+      } else {
+        viewMapa.classList.add('hidden');
+        viewEtiquetas.classList.remove('hidden');
+        btnEtiquetas.className = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow";
+        btnMapa.className = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 text-blue-200 hover:text-white";
+      }
+    };
+
+    // -------------------------------------------------------------------------
+    // UTILITÁRIOS GLOBAIS
+    // -------------------------------------------------------------------------
+    function showGlobalAlert(msg, type = 'info') {
+      const container = document.getElementById('global-alert');
+      const box = document.getElementById('global-alert-box');
+      const text = document.getElementById('global-alert-text');
+      
+      text.textContent = msg;
+      container.classList.remove('hidden');
+      
+      if (type === 'erro') {
+        box.className = "p-3 rounded-lg font-semibold text-sm shadow-sm flex justify-between items-center bg-red-100 text-red-800 border border-red-300";
+      } else if (type === 'sucesso') {
+        box.className = "p-3 rounded-lg font-semibold text-sm shadow-sm flex justify-between items-center bg-green-100 text-green-800 border border-green-300";
+      } else {
+        box.className = "p-3 rounded-lg font-semibold text-sm shadow-sm flex justify-between items-center bg-blue-100 text-blue-800 border border-blue-300";
+      }
+
+      setTimeout(() => { container.classList.add('hidden'); }, 7000);
+    }
+
+    const normalizarChave = (chave) => chave ? chave.toString().normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toUpperCase() : '';
+
+    function parseNum(val) {
+      if (val === null || val === undefined || val === '') return 0;
+      if (typeof val === 'number') return val;
+      let str = val.toString().replace(/\./g, '').replace(',', '.');
+      let num = parseFloat(str);
+      return isNaN(num) ? 0 : num;
+    }
+
     const formatarValidade = (dataVal) => {
       if (!dataVal) return "N/D";
       if (dataVal instanceof Date) return `${String(dataVal.getUTCMonth() + 1).padStart(2, '0')}/${dataVal.getUTCFullYear()}`;
@@ -203,150 +452,466 @@
       if (/^(\d{1,2})\/(\d{4})$/.test(val)) { let [_, m, a] = val.match(/^(\d{1,2})\/(\d{4})$/); return `${m.padStart(2, '0')}/${a}`; }
       const partes = val.split(/[\/\-]/);
       if (partes.length >= 2) {
-          let m = partes[0].padStart(2, '0'); let a = partes[partes.length - 1]; 
-          if (Number(m) > 12 && partes.length >= 3) m = partes[1].padStart(2, '0'); 
-          if (a.length === 2) a = "20" + a; if (a.length === 4) return `${m}/${a}`;
+        let m = partes[0].padStart(2, '0'); let a = partes[partes.length - 1]; 
+        if (Number(m) > 12 && partes.length >= 3) m = partes[1].padStart(2, '0'); 
+        if (a.length === 2) a = "20" + a; if (a.length === 4) return `${m}/${a}`;
       }
       return val;
     };
 
-    // Leitura híbrida: lê datas nativas (raw: true) E texto exato formatado (raw: false) para preservar zeros à esquerda e espaços do lote
-    const lerExcel = (file, callback) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = window.XLSX.read(data, { type: 'array', cellDates: true });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        
-        const rowsRaw = window.XLSX.utils.sheet_to_json(sheet, { raw: true, defval: "" });
-        const rowsFormatted = window.XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
+    // Leitura híbrida unificada (preserva datas nativas E texto formatado para Lote/Cód Localizador)
+    function lerPlanilhaUnificada(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = window.XLSX.read(data, { type: 'array', cellDates: true });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            
+            const rowsRaw = window.XLSX.utils.sheet_to_json(sheet, { raw: true, defval: "" });
+            const rowsFormatted = window.XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
 
-        const normalizedRows = rowsRaw.map((row, idx) => {
-          const newRow = {};
-          const formattedRow = rowsFormatted[idx] || {};
-          
-          Object.keys(row).forEach(key => {
-            const normKey = normalizarChave(key);
-            // Para LOTE e CODIGO LOCALIZADOR, pega o texto exato da célula sem perder zeros/espaços
-            if (normKey === "LOTE" || normKey === "CODIGO LOCALIZADOR") {
-              const valFormatado = formattedRow[key] !== undefined && formattedRow[key] !== "" 
-                ? String(formattedRow[key]) 
-                : (row[key] !== undefined && row[key] !== null ? String(row[key]) : "");
-              newRow[normKey] = valFormatado;
-            } else {
-              newRow[normKey] = row[key];
-            }
+            const normalizedRows = rowsRaw.map((row, idx) => {
+              const newRow = {};
+              const formattedRow = rowsFormatted[idx] || {};
+              
+              Object.keys(row).forEach(key => {
+                const normKey = normalizarChave(key);
+                if (normKey === "LOTE" || normKey === "CODIGO LOCALIZADOR") {
+                  const valFormatado = formattedRow[key] !== undefined && formattedRow[key] !== "" 
+                    ? String(formattedRow[key]) 
+                    : (row[key] !== undefined && row[key] !== null ? String(row[key]) : "");
+                  newRow[normKey] = valFormatado;
+                } else {
+                  newRow[normKey] = row[key];
+                }
+              });
+              return newRow;
+            });
+            resolve(normalizedRows);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    // Feedback visual nos inputs de arquivo
+    document.getElementById('global-file-ressup').addEventListener('change', (e) => {
+      const badge = document.getElementById('badge-ressup');
+      if (e.target.files.length > 0) {
+        badge.textContent = "Selecionado";
+        badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700";
+      }
+    });
+
+    document.getElementById('global-file-saldo').addEventListener('change', (e) => {
+      const badge = document.getElementById('badge-saldo');
+      if (e.target.files.length > 0) {
+        badge.textContent = "Selecionado";
+        badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700";
+      }
+    });
+
+    // -------------------------------------------------------------------------
+    // PROCESSAMENTO UNIFICADO DAS PLANILHAS
+    // -------------------------------------------------------------------------
+    let ressuprimentoGlobal = [];
+    let estoquePorEndereco = {};
+    let etiquetasExportar = [];
+
+    document.getElementById('btn-processar-tudo').addEventListener('click', async () => {
+      const fileRes = document.getElementById('global-file-ressup').files[0];
+      const fileSaldo = document.getElementById('global-file-saldo').files[0];
+      const statusEl = document.getElementById('global-status');
+
+      if (!fileRes || !fileSaldo) {
+        showGlobalAlert("Selecione as planilhas de Ressuprimento e Saldo de Estoque antes de processar.", "erro");
+        return;
+      }
+
+      statusEl.textContent = "Processando planilhas...";
+      statusEl.className = "text-xs font-bold text-blue-600";
+
+      try {
+        const [dataRes, dataSaldo] = await Promise.all([
+          lerPlanilhaUnificada(fileRes),
+          lerPlanilhaUnificada(fileSaldo)
+        ]);
+
+        ressuprimentoGlobal = dataRes;
+
+        // 1. Alimenta o Mapa de Atendimento (Aba 1)
+        processarMapaAtendimento(dataRes, dataSaldo);
+
+        // 2. Alimenta o Controle de Lotes para Etiquetas (Aba 2)
+        prepararEstoqueEtiquetas(dataSaldo);
+
+        document.getElementById('badge-ressup').textContent = `${dataRes.length} linhas`;
+        document.getElementById('badge-ressup').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700";
+        document.getElementById('badge-saldo').textContent = `${dataSaldo.length} linhas`;
+        document.getElementById('badge-saldo').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700";
+
+        statusEl.innerHTML = '<i class="fas fa-check-circle text-green-600"></i> Base sincronizada nos dois módulos!';
+        statusEl.className = "text-xs font-bold text-green-700";
+        showGlobalAlert("Planilhas processadas com sucesso! Tanto o Mapa de Atendimento quanto o Gerador de Etiquetas estão prontos.", "sucesso");
+
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Erro ao ler arquivos.";
+        statusEl.className = "text-xs font-bold text-red-600";
+        showGlobalAlert("Erro ao ler as planilhas. Verifique se são arquivos Excel válidos.", "erro");
+      }
+    });
+
+    // =========================================================================
+    // MÓDULO 1: LÓGICA DO MAPA DE ATENDIMENTO
+    // =========================================================================
+    let produtosSomenteOrigem = [];
+    let produtosOutrosEnds = [];
+    let produtosPickingRes = [];
+    let produtosSaldoNegativo = [];
+    let currentModalType = '';
+    let chartStatusInstance = null;
+    let chartPerformanceInstance = null;
+
+    function isPickingReserva(endereco, tipoLocalizador = '') {
+      if (tipoLocalizador.toUpperCase().includes('PICKING RESERVA')) return true;
+      if (!endereco) return false;
+      
+      let parts = endereco.trim().toUpperCase().split('-');
+      if (parts.length >= 3) {
+        let corredor = parts[0];
+        let modulo = parseInt(parts[1], 10);
+        let box = parts[2];
+        let numCorredor = parseInt(corredor.replace('V', ''), 10);
+        
+        if (box === '011' || box === '012') {
+          let corredoresRegra1 = ['V13', 'V14', 'V15', 'V16', 'V17', 'V18', 'V19', 'V20'];
+          if (corredoresRegra1.includes(corredor)) return true;
+          if (numCorredor >= 21 && numCorredor <= 35 && modulo >= 1 && modulo <= 26) return true;
+        }
+      }
+      return false;
+    }
+
+    function processarMapaAtendimento(normRes, normSaldo) {
+      produtosSomenteOrigem = [];
+      produtosOutrosEnds = [];
+      produtosPickingRes = [];
+      produtosSaldoNegativo = [];
+
+      let totais = { mapas: new Set(), acessos: 0, volumes: 0, caixas: 0, pedido: 0, atendido: 0, pendente: 0 };
+      let units = { origem: 0, outros: 0, picking_res: 0, negativo: 0 };
+
+      let saldoDB = [];
+      normSaldo.forEach(r => {
+        if (r['PRODUTO'] && r['LOCALIZADOR']) {
+          saldoDB.push({
+            produto: parseNum(r['PRODUTO']),
+            endereco: r['LOCALIZADOR'].toString().trim().toUpperCase(),
+            tipo: (r['TIPO LOCALIZADOR'] || '').toString().trim().toUpperCase(),
+            saldo: parseNum(r['SALDO'])
           });
-          return newRow;
-        });
-        callback(normalizedRows);
-      };
-      reader.readAsArrayBuffer(file);
+        }
+      });
+
+      let saldoAgrupado = {};
+      saldoDB.forEach(s => {
+        let key = `${s.produto}_${s.endereco}`;
+        if(!saldoAgrupado[key]) saldoAgrupado[key] = { produto: s.produto, endereco: s.endereco, tipo: s.tipo, saldo: 0 };
+        saldoAgrupado[key].saldo += s.saldo;
+      });
+      let saldoConsolidado = Object.values(saldoAgrupado);
+
+      normRes.forEach(r => {
+        let prod = parseNum(r['PRODUTO']);
+        let origem = (r['ENDERECO'] || '').toString().trim().toUpperCase();
+        let romaneio = r['ROMANEIO'] || '-';
+        if (!prod || !origem) return;
+
+        let qtdPendente = parseNum(r['SALDO PENDENTE']);
+        if(qtdPendente <= 0) qtdPendente = parseNum(r['QTDE N ATENDIDA']);
+        
+        let qtdPedida = parseNum(r['QTDE PEDIDA']);
+        let qtdAtendida = parseNum(r['QTDE ATENDIDA']);
+        let qtdCaixas = parseNum(r['QTDE PEDIDA CX']);
+        let mapa = r['MAPA'];
+        let desc = r['DESCRICAO'] || '-';
+
+        if(mapa) totais.mapas.add(mapa);
+        totais.acessos++;
+        totais.volumes += qtdPedida;
+        totais.caixas += qtdCaixas;
+        totais.pedido += qtdPedida;
+        totais.atendido += qtdAtendida;
+        totais.pendente += qtdPendente;
+
+        if (qtdPendente <= 0) return;
+
+        let saldosProd = saldoConsolidado.filter(s => s.produto === prod);
+        let origemNoSaldo = saldosProd.find(s => s.endereco === origem);
+        let tipoOrigem = origemNoSaldo ? origemNoSaldo.tipo : '';
+        let isOrigemPickingRes = isPickingReserva(origem, tipoOrigem);
+
+        let outrosEnds = saldosProd.filter(s => 
+          s.tipo === "CAIXA FECHADA ( RESERVA )" && 
+          s.endereco !== origem && 
+          s.saldo > 0 &&
+          !isPickingReserva(s.endereco, s.tipo)
+        );
+
+        let saldoNegativoLocais = saldosProd.filter(s => (s.tipo.includes("PICKING") || s.tipo.includes("SEPARACAO")) && s.saldo < 0)
+                                            .map(s => ({ endereco: s.endereco, qtd: s.saldo }));
+
+        let baseItem = { romaneio, produto: prod, descricao: desc, origem, qtd: qtdPendente };
+
+        if (isOrigemPickingRes) {
+          produtosPickingRes.push(baseItem);
+          units.picking_res += qtdPendente;
+        } else {
+          if (outrosEnds.length > 0) {
+            let altEndsObjects = outrosEnds.map(s => ({ endereco: s.endereco, qtd: s.saldo })).sort((a, b) => b.qtd - a.qtd);
+            produtosOutrosEnds.push({ ...baseItem, altEnds: altEndsObjects });
+            units.outros += qtdPendente;
+          } else {
+            produtosSomenteOrigem.push(baseItem);
+            units.origem += qtdPendente;
+          }
+        }
+
+        if (saldoNegativoLocais.length > 0) {
+          produtosSaldoNegativo.push({ ...baseItem, locaisNegativos: saldoNegativoLocais });
+          units.negativo += qtdPendente;
+        }
+      });
+
+      document.getElementById('val-mapas').textContent = totais.mapas.size.toLocaleString('pt-BR');
+      document.getElementById('val-acessos').textContent = totais.acessos.toLocaleString('pt-BR');
+      document.getElementById('val-volumes').textContent = totais.volumes.toLocaleString('pt-BR');
+      document.getElementById('val-caixas').textContent = totais.caixas.toLocaleString('pt-BR');
+      document.getElementById('val-pedido').textContent = totais.pedido.toLocaleString('pt-BR');
+      document.getElementById('val-atendido').textContent = totais.atendido.toLocaleString('pt-BR');
+      document.getElementById('val-pendente-global').textContent = totais.pendente.toLocaleString('pt-BR');
+
+      document.getElementById('ind-origem').textContent = units.origem.toLocaleString('pt-BR');
+      document.getElementById('ind-outros').textContent = units.outros.toLocaleString('pt-BR');
+      document.getElementById('ind-picking-res').textContent = units.picking_res.toLocaleString('pt-BR');
+      document.getElementById('ind-negativo').textContent = units.negativo.toLocaleString('pt-BR');
+
+      drawCharts(units, totais);
+    }
+
+    function drawCharts(units, totais) {
+      const ctx1 = document.getElementById('chartStatus').getContext('2d');
+      if (chartStatusInstance) chartStatusInstance.destroy();
+      chartStatusInstance = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: ['Somente Origem', 'Com Outros Endereços', 'Picking Reserva'],
+          datasets: [{ data: [units.origem, units.outros, units.picking_res], backgroundColor: ['#9ca3af', '#3b82f6', '#eab308'], borderWidth: 2 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: {size: 11} } } }, cutout: '65%' }
+      });
+
+      const ctx2 = document.getElementById('chartPerformance').getContext('2d');
+      if (chartPerformanceInstance) chartPerformanceInstance.destroy();
+      chartPerformanceInstance = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: ['Atendido', 'Pendente'],
+          datasets: [{ data: [totais.atendido, totais.pendente], backgroundColor: ['#22c55e', '#f97316'], borderWidth: 2 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: {size: 11} } } }, cutout: '65%' }
+      });
+    }
+
+    window.openWmsModal = (type) => {
+      currentModalType = type;
+      const modal = document.getElementById('modal-wms-backdrop');
+      const title = document.getElementById('modal-wms-title');
+      const thead = document.getElementById('modal-wms-thead');
+      const tbody = document.getElementById('modal-wms-tbody');
+      
+      thead.innerHTML = ''; tbody.innerHTML = '';
+      let data = []; let headers = [];
+
+      if (type === 'somente_origem') {
+        title.textContent = 'Pendências: Somente no Endereço de Origem';
+        data = produtosSomenteOrigem;
+        headers = ['Romaneio', 'Produto', 'Descrição', 'Endereço Origem', 'Qtd Pendente'];
+      } else if (type === 'outros') {
+        title.textContent = 'Pendências: Com Outros Endereços na Reserva';
+        data = produtosOutrosEnds;
+        headers = ['Romaneio', 'Produto', 'Descrição', 'Endereço Origem', 'Qtd Pendente', 'Opções na Reserva'];
+      } else if (type === 'picking_reserva') {
+        title.textContent = 'Pendências: Origem em Picking Reserva';
+        data = produtosPickingRes;
+        headers = ['Romaneio', 'Produto', 'Descrição', 'Endereço Origem', 'Qtd Pendente'];
+      } else if (type === 'negativo') {
+        title.textContent = 'Alerta: Saldo Negativo no Picking';
+        data = produtosSaldoNegativo;
+        headers = ['Romaneio', 'Produto', 'Descrição', 'Endereço Origem', 'Qtd Pendente', 'Saldos Negativos (Picking)'];
+      }
+
+      headers.forEach(h => {
+        let th = document.createElement('th');
+        th.className = 'px-4 py-3 font-semibold text-gray-600 tracking-wider';
+        th.textContent = h;
+        thead.appendChild(th);
+      });
+
+      data.forEach(item => {
+        let tr = document.createElement('tr');
+        tr.className = 'hover:bg-blue-50';
+        tr.innerHTML = `
+          <td class="px-4 py-2 border-t font-medium text-gray-700">${item.romaneio}</td>
+          <td class="px-4 py-2 border-t font-bold text-gray-900">${item.produto}</td>
+          <td class="px-4 py-2 border-t text-gray-600 text-xs">${item.descricao}</td>
+          <td class="px-4 py-2 border-t text-gray-700">${item.origem}</td>
+          <td class="px-4 py-2 border-t font-bold text-gray-800">${item.qtd}</td>
+        `;
+
+        if (type === 'outros') {
+          let tdExtra = document.createElement('td');
+          tdExtra.className = 'px-4 py-2 border-t max-w-sm';
+          tdExtra.innerHTML = item.altEnds.map(a => 
+            `<div class="inline-flex items-center bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded px-2 py-1 mr-2 mb-1 shadow-sm whitespace-nowrap">
+              <span class="font-bold mr-1">${a.endereco}</span> <span class="text-blue-600 opacity-80">(${a.qtd} un)</span>
+            </div>`
+          ).join('');
+          tr.appendChild(tdExtra);
+        } else if (type === 'negativo') {
+          let tdExtra = document.createElement('td');
+          tdExtra.className = 'px-4 py-2 border-t max-w-sm';
+          tdExtra.innerHTML = item.locaisNegativos.map(a => 
+            `<div class="inline-flex items-center bg-red-50 border border-red-200 text-red-800 text-xs rounded px-2 py-1 mr-2 mb-1 shadow-sm whitespace-nowrap">
+              <span class="font-bold mr-1">${a.endereco}</span> <span class="text-red-600 font-bold">(${a.qtd})</span>
+            </div>`
+          ).join('');
+          tr.appendChild(tdExtra);
+        }
+        tbody.appendChild(tr);
+      });
+
+      modal.classList.add('active');
     };
 
-    const verificarLiberacaoInput = () => {
-      if (ressuprimentoData.length > 0 && Object.keys(estoquePorEndereco).length > 0) {
+    window.closeWmsModal = () => {
+      document.getElementById('modal-wms-backdrop').classList.remove('active');
+      currentModalType = '';
+    };
+
+    document.getElementById('btn-wms-export').addEventListener('click', () => {
+      if (!currentModalType) return;
+      let dataToExport = [];
+      let filename = `Exportacao_${currentModalType}.xlsx`;
+
+      if (currentModalType === 'somente_origem') {
+        dataToExport = produtosSomenteOrigem.map(item => ({ "Romaneio": item.romaneio, "Produto": item.produto, "Descrição": item.descricao, "Endereço Origem": item.origem, "Qtd Pendente": item.qtd }));
+      } else if (currentModalType === 'picking_reserva') {
+        dataToExport = produtosPickingRes.map(item => ({ "Romaneio": item.romaneio, "Produto": item.produto, "Descrição": item.descricao, "Endereço Origem": item.origem, "Qtd Pendente": item.qtd }));
+      } else if (currentModalType === 'outros') {
+        produtosOutrosEnds.forEach(item => {
+          let row = { "Romaneio": item.romaneio, "Produto": item.produto, "Descrição": item.descricao, "Endereço Origem": item.origem, "Qtd Pendente": item.qtd };
+          item.altEnds.forEach((alt, index) => { row[`Endereço Alt ${index + 1}`] = alt.endereco; row[`Qtd Alt ${index + 1}`] = alt.qtd; });
+          dataToExport.push(row);
+        });
+      } else if (currentModalType === 'negativo') {
+        produtosSaldoNegativo.forEach(item => {
+          let row = { "Romaneio": item.romaneio, "Produto": item.produto, "Descrição": item.descricao, "Endereço Origem": item.origem, "Qtd Pendente": item.qtd };
+          item.locaisNegativos.forEach((loc, index) => { row[`End. Negativo ${index + 1}`] = loc.endereco; row[`Saldo Neg. ${index + 1}`] = loc.qtd; });
+          dataToExport.push(row);
+        });
+      }
+
+      if (dataToExport.length === 0) return showGlobalAlert("Não há dados para exportar.", "erro");
+      const ws = window.XLSX.utils.json_to_sheet(dataToExport);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, "Pendencias");
+      window.XLSX.writeFile(wb, filename);
+    });
+
+    // =========================================================================
+    // MÓDULO 2: LÓGICA DO GERADOR DE ETIQUETAS & FIREBASE
+    // =========================================================================
+    function prepararEstoqueEtiquetas(normSaldo) {
+      estoquePorEndereco = {};
+      normSaldo.forEach(item => {
+        const codigo = String(item["PRODUTO"]).trim();
+        const endereco = String(item["LOCALIZADOR"]).trim().toUpperCase();
+        const saldo = parseNum(item["SALDO"]);
+        
+        const loteBruto = item["LOTE"];
+        const lote = (loteBruto !== undefined && loteBruto !== null && String(loteBruto) !== "") ? String(loteBruto) : "N/D";
+        const validade = formatarValidade(item["VALIDADE"]);
+        const codigoLocalizador = (item["CODIGO LOCALIZADOR"] !== undefined && String(item["CODIGO LOCALIZADOR"]) !== "") ? String(item["CODIGO LOCALIZADOR"]) : "N/D";
+
+        if (codigo && endereco && saldo > 0) {
+          const key = `${codigo}-${endereco}`;
+          if (!estoquePorEndereco[key]) estoquePorEndereco[key] = [];
+          estoquePorEndereco[key].push({ lote, validade, saldoAtual: saldo, codigoLocalizador });
+        }
+      });
+
+      if (ressuprimentoGlobal.length > 0 && Object.keys(estoquePorEndereco).length > 0) {
         document.getElementById('input-codigo').disabled = false;
         document.getElementById('input-qtd').disabled = false;
         document.getElementById('btn-adicionar').disabled = false;
       }
-    };
-
-    document.getElementById('upload-ressuprimento').addEventListener('change', function(e) {
-      if(e.target.files.length === 0) return;
-      lerExcel(e.target.files[0], (data) => {
-        ressuprimentoData = data;
-        const p = document.getElementById('status-ressuprimento');
-        p.textContent = `Carregado: ${data.length} linhas`;
-        p.className = 'text-xs text-green-600 mt-1 font-semibold';
-        verificarLiberacaoInput();
-      });
-    });
-
-    document.getElementById('upload-saldo').addEventListener('change', function(e) {
-      if(e.target.files.length === 0) return;
-      lerExcel(e.target.files[0], (data) => {
-        estoquePorEndereco = {};
-        data.forEach(item => {
-          const codigo = String(item["PRODUTO"]).trim(); 
-          const endereco = String(item["LOCALIZADOR"]).trim();
-          const saldo = parseFloat(item["SALDO"]) || 0;
-          
-          // Aceita "0", "00", "0000", "0123", " 0123", etc. Só vira N/D se estiver realmente vazio
-          const loteBruto = item["LOTE"];
-          const lote = (loteBruto !== undefined && loteBruto !== null && String(loteBruto) !== "") 
-            ? String(loteBruto) 
-            : "N/D";
-
-          const validade = formatarValidade(item["VALIDADE"]); 
-          const codigoLocalizador = (item["CODIGO LOCALIZADOR"] !== undefined && String(item["CODIGO LOCALIZADOR"]) !== "") 
-            ? String(item["CODIGO LOCALIZADOR"]) 
-            : "N/D";
-
-          if(codigo && endereco && saldo > 0) {
-            const key = `${codigo}-${endereco}`;
-            if(!estoquePorEndereco[key]) estoquePorEndereco[key] = [];
-            estoquePorEndereco[key].push({ lote, validade, saldoAtual: saldo, codigoLocalizador });
-          }
-        });
-        const p = document.getElementById('status-saldo');
-        p.textContent = `Carregado: ${data.length} linhas`;
-        p.className = 'text-xs text-green-600 mt-1 font-semibold';
-        verificarLiberacaoInput();
-      });
-    });
-
-    const mostrarMensagem = (msg, tipo = 'erro') => {
-      const div = document.getElementById('mensagem-alerta');
-      div.textContent = msg;
-      div.className = `mb-4 p-3 rounded-md font-semibold text-sm shadow-sm ${tipo === 'erro' ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-green-100 text-green-700 border border-green-300'}`;
-      div.style.display = 'block'; setTimeout(() => { div.style.display = 'none'; }, 8000); 
-    };
+    }
 
     document.getElementById('btn-adicionar').addEventListener('click', () => {
       const codigoInput = document.getElementById('input-codigo').value.trim();
       const qtdInputText = document.getElementById('input-qtd').value.trim();
       if (!codigoInput) return;
 
-      const itemRessup = ressuprimentoData.find(r => String(r["PRODUTO"]).trim() === String(codigoInput));
-      if (!itemRessup) return mostrarMensagem(`Código ${codigoInput} não encontrado na planilha de Ressuprimento.`);
-      
-      const enderecoRessup = String(itemRessup["ENDERECO"] || itemRessup["ENDEREÇO"]).trim(); 
-      const descRessup = itemRessup["DESCRICAO"] || itemRessup["DESCRIÇÃO"];
-      const qtdSolicitada = qtdInputText !== "" ? parseFloat(qtdInputText) : parseFloat(itemRessup["QTDE PEDIDA"] || itemRessup["QTD"] || 0);
+      const itemRessup = ressuprimentoGlobal.find(r => String(r["PRODUTO"]).trim() === String(codigoInput));
+      if (!itemRessup) return showGlobalAlert(`Código ${codigoInput} não encontrado na planilha de Ressuprimento.`, "erro");
 
-      if (qtdSolicitada <= 0) return mostrarMensagem(`A quantidade para o código ${codigoInput} deve ser maior que zero.`);
+      const enderecoRessup = String(itemRessup["ENDERECO"] || "").trim().toUpperCase();
+      const descRessup = itemRessup["DESCRICAO"] || "-";
+      const qtdSolicitada = qtdInputText !== "" ? parseNum(qtdInputText) : parseNum(itemRessup["QTDE PEDIDA"] || itemRessup["QTD"]);
+
+      if (qtdSolicitada <= 0) return showGlobalAlert(`A quantidade para o código ${codigoInput} deve ser maior que zero.`, "erro");
 
       const chaveSaldo = `${codigoInput}-${enderecoRessup}`;
       const lotesDisponiveis = estoquePorEndereco[chaveSaldo] || [];
       const saldoTotalEndereco = lotesDisponiveis.reduce((acc, l) => acc + l.saldoAtual, 0);
 
-      if (saldoTotalEndereco === 0) return mostrarMensagem(`O código ${codigoInput} não possui saldo positivo na origem (${enderecoRessup}).`);
-      if (saldoTotalEndereco < qtdSolicitada) return mostrarMensagem(`Saldo insuficiente! Origem: ${enderecoRessup}. Solicitado: ${qtdSolicitada} | Disponível: ${saldoTotalEndereco}`);
+      if (saldoTotalEndereco === 0) return showGlobalAlert(`O código ${codigoInput} não possui saldo positivo na origem (${enderecoRessup}).`, "erro");
+      if (saldoTotalEndereco < qtdSolicitada) return showGlobalAlert(`Saldo insuficiente! Origem: ${enderecoRessup}. Solicitado: ${qtdSolicitada} | Disponível: ${saldoTotalEndereco}`, "erro");
 
       let qtdRestante = qtdSolicitada;
       for (let lote of lotesDisponiveis) {
-        if (qtdRestante <= 0) break; 
+        if (qtdRestante <= 0) break;
         if (lote.saldoAtual > 0) {
           const qtdASeparar = Math.min(qtdRestante, lote.saldoAtual);
-          lote.saldoAtual -= qtdASeparar; qtdRestante -= qtdASeparar;
+          lote.saldoAtual -= qtdASeparar;
+          qtdRestante -= qtdASeparar;
           etiquetasExportar.push({
-            CÓDIGO: codigoInput, "CÓD. LOCALIZADOR": lote.codigoLocalizador, DESCRIÇÃO: descRessup, QTD: qtdASeparar, 
+            CÓDIGO: codigoInput, "CÓD. LOCALIZADOR": lote.codigoLocalizador, DESCRIÇÃO: descRessup, QTD: qtdASeparar,
             ENDEREÇO: enderecoRessup, LOTE: lote.lote, VALIDADE: lote.validade, _chaveSaldo: chaveSaldo, _lote: lote.lote, _validade: lote.validade
           });
         }
       }
-      document.getElementById('input-codigo').value = ''; document.getElementById('input-qtd').value = ''; document.getElementById('input-codigo').focus();
-      atualizarTabela();
+
+      document.getElementById('input-codigo').value = '';
+      document.getElementById('input-qtd').value = '';
+      document.getElementById('input-codigo').focus();
+      atualizarTabelaEtiquetas();
     });
 
     document.getElementById('input-codigo').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('input-qtd').focus(); });
     document.getElementById('input-qtd').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('btn-adicionar').click(); });
 
-    const atualizarDashboard = () => {
+    const atualizarDashboardEtiquetas = () => {
       document.getElementById('dash-total-unidades').textContent = etiquetasExportar.reduce((acc, curr) => acc + curr.QTD, 0);
       document.getElementById('dash-total-etiquetas').textContent = etiquetasExportar.length;
-      
+
       const setores = {};
       etiquetasExportar.forEach(item => {
         const setor = item.ENDEREÇO.split('-')[0] || item.ENDEREÇO;
@@ -355,81 +920,86 @@
       const ul = document.getElementById('dash-setores'); ul.innerHTML = '';
       const arr = Object.entries(setores).sort((a, b) => b[1] - a[1]);
       if (arr.length === 0) ul.innerHTML = '<li class="text-purple-400 italic">Nenhum dado</li>';
-      else arr.forEach(([s, q]) => ul.innerHTML += `<li class="flex justify-between border-b border-purple-100 py-1"><span class="font-bold text-purple-900">${s}</span><span class="bg-purple-200 text-xs py-1 px-2 rounded-full">${q} un</span></li>`);
+      else arr.forEach(([s, q]) => ul.innerHTML += `<li class="flex justify-between border-b border-purple-100 py-0.5"><span class="font-bold text-purple-900">${s}</span><span class="bg-purple-200 px-1.5 rounded-full">${q} un</span></li>`);
     };
 
-    window.removerItem = (index) => {
+    window.removerItemEtiqueta = (index) => {
       const item = etiquetasExportar[index];
       const loteObj = (estoquePorEndereco[item._chaveSaldo] || []).find(l => l.lote === item._lote && l.validade === item._validade);
       if (loteObj) loteObj.saldoAtual += item.QTD;
-      etiquetasExportar.splice(index, 1); atualizarTabela();
+      etiquetasExportar.splice(index, 1);
+      atualizarTabelaEtiquetas();
     };
 
-    const atualizarTabela = () => {
+    const atualizarTabelaEtiquetas = () => {
       const tbody = document.getElementById('tabela-corpo'); tbody.innerHTML = '';
       document.getElementById('btn-exportar').disabled = etiquetasExportar.length === 0;
       document.getElementById('btn-limpar').disabled = etiquetasExportar.length === 0;
 
-      if (etiquetasExportar.length === 0) tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado.</td></tr>';
+      if (etiquetasExportar.length === 0) tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>';
       else etiquetasExportar.forEach((item, index) => {
         tbody.innerHTML += `<tr class="border-b hover:bg-gray-50 bg-white">
-          <td class="p-3">${item.CÓDIGO}</td><td class="p-3 text-xs text-gray-500 font-mono">${item["CÓD. LOCALIZADOR"]}</td>
-          <td class="p-3 truncate max-w-[200px]" title="${item.DESCRIÇÃO}">${item.DESCRIÇÃO}</td><td class="p-3 font-bold text-blue-700">${item.QTD}</td>
+          <td class="p-3 font-medium">${item.CÓDIGO}</td><td class="p-3 text-xs text-gray-500 font-mono">${item["CÓD. LOCALIZADOR"]}</td>
+          <td class="p-3 truncate max-w-[220px]" title="${item.DESCRIÇÃO}">${item.DESCRIÇÃO}</td><td class="p-3 font-bold text-blue-700">${item.QTD}</td>
           <td class="p-3 font-semibold">${item.ENDEREÇO}</td><td class="p-3 text-xs font-mono whitespace-pre">${item.LOTE}</td><td class="p-3 text-xs">${item.VALIDADE}</td>
-          <td class="p-3 text-center"><button onclick="removerItem(${index})" class="text-red-500 font-bold px-2">X</button></td></tr>`;
+          <td class="p-3 text-center"><button onclick="removerItemEtiqueta(${index})" class="text-red-500 hover:text-red-700 font-bold px-2">X</button></td></tr>`;
       });
-      atualizarDashboard();
+      atualizarDashboardEtiquetas();
     };
 
     document.getElementById('btn-limpar').addEventListener('click', () => {
-      if (!confirm("Limpar toda a lista e restaurar saldos?")) return;
       etiquetasExportar.forEach(item => {
         const l = (estoquePorEndereco[item._chaveSaldo] || []).find(l => l.lote === item._lote && l.validade === item._validade);
-        if(l) l.saldoAtual += item.QTD;
+        if (l) l.saldoAtual += item.QTD;
       });
-      etiquetasExportar = []; atualizarTabela();
+      etiquetasExportar = [];
+      atualizarTabelaEtiquetas();
+      showGlobalAlert("Lista de etiquetas limpa e saldos restaurados.", "info");
     });
 
     document.getElementById('btn-exportar').addEventListener('click', async () => {
       if (etiquetasExportar.length === 0) return;
-      const btn = document.getElementById('btn-exportar'); btn.textContent = "Salvando...";
+      const btn = document.getElementById('btn-exportar');
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Salvando...';
+      
       try {
         await addDoc(collection(db, "historico_etiquetas"), {
-          data_geracao: serverTimestamp(), total_etiquetas: etiquetasExportar.length,
+          data_geracao: serverTimestamp(),
+          total_etiquetas: etiquetasExportar.length,
           total_unidades: etiquetasExportar.reduce((a, c) => a + c.QTD, 0),
           produtos: etiquetasExportar.map(e => ({ codigo: e.CÓDIGO, descricao: e.DESCRIÇÃO, quantidade: e.QTD, endereco: e.ENDEREÇO, lote: e.LOTE }))
         });
-      } catch (e) { console.error(e); } finally { btn.textContent = "Gerar Arquivo (.xls)"; }
+      } catch (e) { console.error(e); } finally { btn.innerHTML = originalHtml; }
 
-      const dadosLimpos = etiquetasExportar.map(e => ({ 
-        CÓDIGO: e.CÓDIGO, 
-        "CÓD. LOCALIZADOR": String(e["CÓD. LOCALIZADOR"]), 
-        DESCRIÇÃO: e.DESCRIÇÃO, 
-        QTD: e.QTD, 
-        ENDEREÇO: e.ENDEREÇO, 
-        LOTE: String(e.LOTE), 
-        VALIDADE: e.VALIDADE 
+      const dadosLimpos = etiquetasExportar.map(e => ({
+        CÓDIGO: e.CÓDIGO,
+        "CÓD. LOCALIZADOR": String(e["CÓD. LOCALIZADOR"]),
+        DESCRIÇÃO: e.DESCRIÇÃO,
+        QTD: e.QTD,
+        ENDEREÇO: e.ENDEREÇO,
+        LOTE: String(e.LOTE),
+        VALIDADE: e.VALIDADE
       }));
-      
+
       const ws = window.XLSX.utils.json_to_sheet(dadosLimpos);
-      
-      // Garante que as células da coluna LOTE (coluna F) e CÓD. LOCALIZADOR (coluna B) sejam salvas como Texto puro no Excel
       const range = window.XLSX.utils.decode_range(ws['!ref']);
       for (let R = 1; R <= range.e.r; ++R) {
         const cellLoc = ws[window.XLSX.utils.encode_cell({ r: R, c: 1 })];
         if (cellLoc) { cellLoc.t = 's'; cellLoc.v = String(cellLoc.v); }
-        
         const cellLote = ws[window.XLSX.utils.encode_cell({ r: R, c: 5 })];
         if (cellLote) { cellLote.t = 's'; cellLote.v = String(cellLote.v); }
       }
 
       const wb = window.XLSX.utils.book_new();
-      window.XLSX.utils.book_append_sheet(wb, ws, "Etiquetas"); 
+      window.XLSX.utils.book_append_sheet(wb, ws, "Etiquetas");
       window.XLSX.writeFile(wb, "Etiquetas_Exportadas.xls", { bookType: 'xls' });
-      mostrarMensagem('Exportado e salvo no banco!', 'sucesso');
+      showGlobalAlert('Arquivo .xls exportado e histórico salvo no Firebase!', 'sucesso');
     });
 
-    // Lógica do Módulo de Relatórios
+    // =========================================================================
+    // RELATÓRIO HISTÓRICO (FIREBASE)
+    // =========================================================================
     const modalRelatorio = document.getElementById('modal-relatorio');
     document.getElementById('btn-abrir-relatorio').addEventListener('click', () => {
       const hoje = new Date().toISOString().split('T')[0];
@@ -447,10 +1017,7 @@
     document.getElementById('btn-buscar-relatorio').addEventListener('click', async () => {
       const dataInicio = document.getElementById('filtro-data-inicio').value;
       const dataFim = document.getElementById('filtro-data-fim').value;
-
-      if(!dataInicio || !dataFim) {
-        alert("Preencha a Data Inicial e Final!"); return;
-      }
+      if (!dataInicio || !dataFim) return showGlobalAlert("Preencha a Data Inicial e Final!", "erro");
 
       const statusMsg = document.getElementById('relatorio-status');
       const painelResultados = document.getElementById('relatorio-resultados');
@@ -460,25 +1027,15 @@
       try {
         const start = new Date(`${dataInicio}T00:00:00`);
         const end = new Date(`${dataFim}T23:59:59`);
-
-        const q = query(
-          collection(db, "historico_etiquetas"),
-          where("data_geracao", ">=", start),
-          where("data_geracao", "<=", end)
-        );
-
+        const q = query(collection(db, "historico_etiquetas"), where("data_geracao", ">=", start), where("data_geracao", "<=", end));
         const querySnapshot = await getDocs(q);
-        
-        let somaTotalUnidades = 0;
-        let somaTotalEtiquetas = 0;
-        let setoresRelatorio = {};
-        const listaDetalhamento = [];
+
+        let somaTotalUnidades = 0; let somaTotalEtiquetas = 0; let setoresRelatorio = {}; const listaDetalhamento = [];
 
         querySnapshot.forEach((doc) => {
           const dados = doc.data();
           somaTotalUnidades += dados.total_unidades || 0;
           somaTotalEtiquetas += dados.total_etiquetas || 0;
-          
           const dataDoc = dados.data_geracao ? dados.data_geracao.toDate() : new Date();
           const dataStr = dataDoc.toLocaleDateString('pt-BR') + " " + dataDoc.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
 
@@ -486,54 +1043,31 @@
             dados.produtos.forEach(prod => {
               const setor = prod.endereco ? prod.endereco.split('-')[0] : 'N/D';
               setoresRelatorio[setor] = (setoresRelatorio[setor] || 0) + prod.quantidade;
-              
-              listaDetalhamento.push({
-                dataHora: dataStr,
-                timestamp: dataDoc.getTime(),
-                codigo: prod.codigo,
-                descricao: prod.descricao,
-                qtd: prod.quantidade,
-                endereco: prod.endereco
-              });
+              listaDetalhamento.push({ dataHora: dataStr, timestamp: dataDoc.getTime(), codigo: prod.codigo, descricao: prod.descricao, qtd: prod.quantidade, endereco: prod.endereco });
             });
           }
         });
 
         listaDetalhamento.sort((a, b) => b.timestamp - a.timestamp);
-
         document.getElementById('rel-total-unidades').textContent = somaTotalUnidades;
         document.getElementById('rel-total-etiquetas').textContent = somaTotalEtiquetas;
 
-        const ulSetores = document.getElementById('rel-setores');
-        ulSetores.innerHTML = '';
+        const ulSetores = document.getElementById('rel-setores'); ulSetores.innerHTML = '';
         const arrSetores = Object.entries(setoresRelatorio).sort((a, b) => b[1] - a[1]);
         if (arrSetores.length === 0) ulSetores.innerHTML = '<li class="text-purple-400 italic">Nenhum dado no período</li>';
-        else arrSetores.forEach(([s, q]) => ulSetores.innerHTML += `<li class="flex justify-between border-b border-purple-100 py-1"><span class="font-bold text-purple-900">${s}</span><span class="bg-purple-200 text-xs py-1 px-2 rounded-full">${q} un</span></li>`);
+        else arrSetores.forEach(([s, q]) => ulSetores.innerHTML += `<li class="flex justify-between border-b border-purple-100 py-1"><span class="font-bold text-purple-900">${s}</span><span class="bg-purple-200 px-2 rounded-full">${q} un</span></li>`);
 
-        const tbodyRel = document.getElementById('relatorio-tabela-corpo');
-        tbodyRel.innerHTML = '';
-        if (listaDetalhamento.length === 0) {
-          tbodyRel.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500 italic">Nenhum apontamento encontrado nas datas selecionadas.</td></tr>';
-        } else {
-          listaDetalhamento.forEach(item => {
-            tbodyRel.innerHTML += `
-              <tr class="border-b hover:bg-gray-50">
-                <td class="p-2 whitespace-nowrap">${item.dataHora}</td>
-                <td class="p-2 font-semibold">${item.codigo}</td>
-                <td class="p-2 truncate max-w-[200px]" title="${item.descricao}">${item.descricao}</td>
-                <td class="p-2 font-bold text-blue-700">${item.qtd}</td>
-                <td class="p-2">${item.endereco}</td>
-              </tr>
-            `;
-          });
-        }
+        const tbodyRel = document.getElementById('relatorio-tabela-corpo'); tbodyRel.innerHTML = '';
+        if (listaDetalhamento.length === 0) tbodyRel.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500 italic">Nenhum apontamento encontrado nas datas selecionadas.</td></tr>';
+        else listaDetalhamento.forEach(item => {
+          tbodyRel.innerHTML += `<tr class="border-b hover:bg-gray-50"><td class="p-2 whitespace-nowrap">${item.dataHora}</td><td class="p-2 font-semibold">${item.codigo}</td><td class="p-2 truncate max-w-[200px]" title="${item.descricao}">${item.descricao}</td><td class="p-2 font-bold text-blue-700">${item.qtd}</td><td class="p-2">${item.endereco}</td></tr>`;
+        });
 
         statusMsg.classList.add('hidden');
         painelResultados.classList.remove('hidden');
         painelResultados.classList.add('flex');
-
       } catch (error) {
-        console.error("Erro na busca do relatório:", error);
+        console.error(error);
         statusMsg.textContent = "Erro ao buscar dados. Verifique a conexão.";
         statusMsg.classList.add('text-red-600');
       }
