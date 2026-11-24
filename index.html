@@ -7,6 +7,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Bibliotecas para Geração de PDF e Códigos de Barras (Zebra) -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -43,7 +46,7 @@
     </div>
   </header>
 
-  <!-- Barra Unificada de Importação de Planilhas (Alimenta os 2 módulos simultaneamente) -->
+  <!-- Barra Unificada de Importação de Planilhas (Com Memória Persistente) -->
   <section class="bg-white border-b shadow-sm shrink-0">
     <div class="max-w-7xl mx-auto px-4 py-4">
       <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
@@ -52,25 +55,34 @@
           <div class="flex items-center gap-3 border rounded-lg px-3 py-2 bg-gray-50">
             <i class="fas fa-file-excel text-green-600 text-xl"></i>
             <div class="flex-1 min-w-0">
-              <label class="block text-xs font-bold text-gray-700 uppercase">1. Planilha Ressuprimento</label>
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-gray-700 uppercase">1. Planilha Ressuprimento</label>
+                <span id="saved-info-ressup" class="text-[10px] text-gray-400 truncate max-w-[140px]"></span>
+              </div>
               <input type="file" id="global-file-ressup" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer mt-0.5">
             </div>
-            <span id="badge-ressup" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600">Pendente</span>
+            <span id="badge-ressup" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">Pendente</span>
           </div>
 
           <!-- Saldo de Estoque -->
           <div class="flex items-center gap-3 border rounded-lg px-3 py-2 bg-gray-50">
             <i class="fas fa-boxes text-blue-600 text-xl"></i>
             <div class="flex-1 min-w-0">
-              <label class="block text-xs font-bold text-gray-700 uppercase">2. Saldo de Estoque</label>
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-gray-700 uppercase">2. Saldo de Estoque</label>
+                <span id="saved-info-saldo" class="text-[10px] text-gray-400 truncate max-w-[140px]"></span>
+              </div>
               <input type="file" id="global-file-saldo" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer mt-0.5">
             </div>
-            <span id="badge-saldo" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600">Pendente</span>
+            <span id="badge-saldo" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">Pendente</span>
           </div>
         </div>
 
-        <div class="flex items-center gap-3 w-full lg:w-auto justify-end">
-          <span id="global-status" class="text-xs font-medium text-gray-500">Carregue as duas planilhas para iniciar</span>
+        <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end">
+          <span id="global-status" class="text-xs font-medium text-gray-500 mr-1">Carregue as planilhas para iniciar</span>
+          <button id="btn-limpar-cache" title="Apagar memória salva no navegador" class="hidden bg-gray-200 hover:bg-red-100 text-gray-700 hover:text-red-700 font-bold py-2.5 px-3 rounded-lg transition text-xs flex items-center gap-1 shrink-0">
+            <i class="fas fa-eraser"></i> Limpar Memória
+          </button>
           <button id="btn-processar-tudo" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 px-5 rounded-lg transition shadow flex items-center gap-2 shrink-0">
             <i class="fas fa-sync-alt"></i> Processar Base
           </button>
@@ -195,7 +207,7 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 mb-6 gap-4">
         <div>
           <h2 class="text-xl font-bold text-blue-900">Geração de Etiquetas (Multilotes & Split Automático)</h2>
-          <p class="text-xs text-gray-500">Utiliza automaticamente as planilhas importadas no topo da página</p>
+          <p class="text-xs text-gray-500">Gera simultaneamente a planilha (.xls) e a folha de bipagem (.pdf) com códigos de barras espaçados para Zebra</p>
         </div>
         <button id="btn-abrir-relatorio" class="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition flex items-center gap-2 text-sm">
           <i class="fas fa-history"></i> Histórico e Relatórios (Firebase)
@@ -217,7 +229,7 @@
               </button>
             </div>
           </div>
-          <p class="text-xs text-gray-500 mt-2">Processe as planilhas no topo para liberar. Deixe a Qtd vazia para puxar o pedido total.</p>
+          <p class="text-xs text-gray-500 mt-2">Deixe a Qtd vazia para puxar o pedido total da planilha. Origem <b>XXXXXX</b> abre seleção de saldo.</p>
         </div>
 
         <!-- Cards Indicadores da Sessão -->
@@ -246,12 +258,15 @@
       <div class="border rounded-lg overflow-hidden">
         <div class="bg-gray-50 px-4 py-3 border-b flex flex-wrap justify-between items-center gap-3">
           <h3 class="font-bold text-gray-700 text-sm uppercase">Lista para Exportação</h3>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <button id="btn-limpar" class="bg-red-100 text-red-700 border border-red-300 px-3 py-1.5 rounded hover:bg-red-200 disabled:opacity-50 text-xs font-bold transition" disabled>
               <i class="fas fa-trash-alt mr-1"></i> Limpar Lista
             </button>
+            <button id="btn-somente-pdf" class="bg-slate-700 text-white px-3.5 py-1.5 rounded hover:bg-slate-800 disabled:opacity-50 text-xs font-bold transition shadow-sm" disabled title="Baixar apenas a folha de bipagem em PDF">
+              <i class="fas fa-file-pdf mr-1 text-red-300"></i> Apenas PDF Bipagem
+            </button>
             <button id="btn-exportar" class="bg-green-600 text-white px-4 py-1.5 rounded hover:bg-green-700 disabled:opacity-50 text-xs font-bold transition shadow-sm" disabled>
-              <i class="fas fa-file-export mr-1"></i> Gerar Arquivo (.xls) & Salvar
+              <i class="fas fa-file-export mr-1"></i> Gerar Etiquetas (.xls + .pdf) & Salvar
             </button>
           </div>
         </div>
@@ -259,6 +274,7 @@
           <table class="w-full text-sm text-left border-collapse">
             <thead class="bg-gray-100 text-gray-700 text-xs uppercase">
               <tr>
+                <th class="p-3 border-b">ROMANEIO</th>
                 <th class="p-3 border-b">CÓDIGO</th>
                 <th class="p-3 border-b">CÓD. LOC.</th>
                 <th class="p-3 border-b">DESCRIÇÃO</th>
@@ -270,7 +286,7 @@
               </tr>
             </thead>
             <tbody id="tabela-corpo">
-              <tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>
+              <tr><td colspan="9" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>
             </tbody>
           </table>
         </div>
@@ -373,7 +389,38 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- SCRIPT UNIFICADO (MAPA WMS + GERADOR DE ETIQUETAS + FIREBASE)         -->
+  <!-- MODAL 3: SELEÇÃO DE ENDEREÇO ALTERNATIVO (QUANDO ORIGEM FOR XXXXXX)   -->
+  <!-- ===================================================================== -->
+  <div id="modal-endereco-xxxxxx" class="fixed inset-0 bg-black bg-opacity-60 hidden justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center p-5 border-b bg-amber-50 rounded-t-lg">
+        <div>
+          <h2 class="text-lg font-bold text-amber-900"><i class="fas fa-map-marker-alt text-amber-600 mr-2"></i>Origem Indefinida (XXXXXX)</h2>
+          <p class="text-xs text-amber-700 mt-0.5" id="modal-xxxxxx-subtitulo">Selecione o endereço de onde deseja retirar o saldo:</p>
+        </div>
+        <button id="btn-fechar-xxxxxx" class="text-gray-500 hover:text-red-600 font-bold text-2xl leading-none">&times;</button>
+      </div>
+      
+      <div class="p-5 overflow-y-auto flex-1">
+        <div class="bg-gray-50 border rounded-lg p-3 mb-4 text-xs flex flex-wrap justify-between gap-2">
+          <div><span class="font-bold text-gray-600">PRODUTO:</span> <span id="xxxxxx-prod-info" class="font-bold text-gray-900"></span></div>
+          <div><span class="font-bold text-gray-600">QTD SOLICITADA:</span> <span id="xxxxxx-qtd-info" class="font-bold text-blue-700 text-sm"></span></div>
+        </div>
+
+        <p class="text-xs font-bold text-gray-600 uppercase mb-2">Endereços Disponíveis com Saldo Positivo:</p>
+        <div id="lista-enderecos-xxxxxx" class="space-y-2">
+          <!-- Cards de endereços injetados via JS -->
+        </div>
+      </div>
+
+      <div class="px-5 py-3 border-t bg-gray-50 text-right rounded-b-lg">
+        <button id="btn-cancelar-xxxxxx" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-1.5 px-4 rounded text-sm">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- SCRIPT UNIFICADO (INDEXEDDB CACHE + MAPA WMS + ETIQUETAS + PDF ZEBRA) -->
   <!-- ===================================================================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
@@ -390,6 +437,69 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    // =========================================================================
+    // PERSISTÊNCIA LOCAL (INDEXEDDB) PARA MANTIMENTO DA ÚLTIMA IMPORTAÇÃO
+    // =========================================================================
+    const IDB_NAME = "WMS_Ressuprimento_Cache_DB";
+    const IDB_STORE = "planilhas_salvas";
+
+    function openCacheDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains(IDB_STORE)) {
+            database.createObjectStore(IDB_STORE);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function salvarCachePlanilha(chave, payload) {
+      try {
+        const database = await openCacheDB();
+        return new Promise((resolve, reject) => {
+          const tx = database.transaction(IDB_STORE, "readwrite");
+          tx.objectStore(IDB_STORE).put(payload, chave);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (e) {
+        console.warn("Não foi possível salvar no IndexedDB:", e);
+      }
+    }
+
+    async function lerCachePlanilha(chave) {
+      try {
+        const database = await openCacheDB();
+        return new Promise((resolve, reject) => {
+          const tx = database.transaction(IDB_STORE, "readonly");
+          const req = tx.objectStore(IDB_STORE).get(chave);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        });
+      } catch (e) {
+        console.warn("Erro ao ler IndexedDB:", e);
+        return null;
+      }
+    }
+
+    async function limparTodoCache() {
+      try {
+        const database = await openCacheDB();
+        return new Promise((resolve, reject) => {
+          const tx = database.transaction(IDB_STORE, "readwrite");
+          tx.objectStore(IDB_STORE).clear();
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (e) {
+        console.warn(e);
+      }
+    }
 
     // -------------------------------------------------------------------------
     // CONTROLE DE ABAS
@@ -435,7 +545,7 @@
       setTimeout(() => { container.classList.add('hidden'); }, 7000);
     }
 
-    const normalizarChave = (chave) => chave ? chave.toString().normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toUpperCase() : '';
+    const normalizarChave = (chave) => chave ? chave.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase() : '';
 
     function parseNum(val) {
       if (val === null || val === undefined || val === '') return 0;
@@ -472,17 +582,37 @@
             const rowsRaw = window.XLSX.utils.sheet_to_json(sheet, { raw: true, defval: "" });
             const rowsFormatted = window.XLSX.utils.sheet_to_json(sheet, { raw: false, defval: "" });
 
+            const extrairTextoPuroNumerico = (rawVal, fmtVal) => {
+              if (rawVal === undefined || rawVal === null || rawVal === "") {
+                return fmtVal !== undefined && fmtVal !== null ? String(fmtVal).trim() : "";
+              }
+              // Se o Excel converteu um número inteiro em Date por causa da formatação da célula,
+              // reconverte o Date de volta para o serial numérico inteiro do Excel!
+              if (rawVal instanceof Date && !isNaN(rawVal.getTime())) {
+                const excelEpoch = Date.UTC(1899, 11, 30);
+                const serial = Math.round((rawVal.getTime() - excelEpoch) / 86400000);
+                return String(serial);
+              }
+              if (typeof rawVal === "number") {
+                return String(Math.round(rawVal));
+              }
+              const sFmt = fmtVal !== undefined && fmtVal !== null ? String(fmtVal).trim() : "";
+              const sRaw = String(rawVal).trim();
+              // Se o texto formatado virou data (ex: 12/05/2592) mas o valor bruto não tem barra, usa o bruto
+              if (/[\/]/.test(sFmt) && !/[\/]/.test(sRaw)) {
+                return sRaw;
+              }
+              return sFmt || sRaw;
+            };
+
             const normalizedRows = rowsRaw.map((row, idx) => {
               const newRow = {};
               const formattedRow = rowsFormatted[idx] || {};
               
               Object.keys(row).forEach(key => {
                 const normKey = normalizarChave(key);
-                if (normKey === "LOTE" || normKey === "CODIGO LOCALIZADOR") {
-                  const valFormatado = formattedRow[key] !== undefined && formattedRow[key] !== "" 
-                    ? String(formattedRow[key]) 
-                    : (row[key] !== undefined && row[key] !== null ? String(row[key]) : "");
-                  newRow[normKey] = valFormatado;
+                if (normKey === "LOTE" || normKey === "CODIGO LOCALIZADOR" || normKey === "ROMANEIO" || normKey === "PRODUTO") {
+                  newRow[normKey] = extrairTextoPuroNumerico(row[key], formattedRow[key]);
                 } else {
                   newRow[normKey] = row[key];
                 }
@@ -503,66 +633,143 @@
     document.getElementById('global-file-ressup').addEventListener('change', (e) => {
       const badge = document.getElementById('badge-ressup');
       if (e.target.files.length > 0) {
-        badge.textContent = "Selecionado";
-        badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700";
+        badge.textContent = "Novo Arquivo";
+        badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700 shrink-0";
       }
     });
 
     document.getElementById('global-file-saldo').addEventListener('change', (e) => {
       const badge = document.getElementById('badge-saldo');
       if (e.target.files.length > 0) {
-        badge.textContent = "Selecionado";
-        badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700";
+        badge.textContent = "Novo Arquivo";
+        badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700 shrink-0";
       }
     });
 
     // -------------------------------------------------------------------------
-    // PROCESSAMENTO UNIFICADO DAS PLANILHAS
+    // PROCESSAMENTO UNIFICADO DAS PLANILHAS (COM SUPORTE A CACHE PARCIAL/TOTAL)
     // -------------------------------------------------------------------------
     let ressuprimentoGlobal = [];
     let estoquePorEndereco = {};
     let etiquetasExportar = [];
+
+    function aplicarBasesNosModulos(dataRes, dataSaldo, metaRes, metaSaldo, origemMensagem) {
+      ressuprimentoGlobal = dataRes;
+
+      // 1. Alimenta o Mapa de Atendimento (Aba 1)
+      processarMapaAtendimento(dataRes, dataSaldo);
+
+      // 2. Alimenta o Controle de Lotes para Etiquetas (Aba 2)
+      prepararEstoqueEtiquetas(dataSaldo);
+
+      document.getElementById('badge-ressup').textContent = `${dataRes.length} linhas`;
+      document.getElementById('badge-ressup').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 shrink-0";
+      document.getElementById('saved-info-ressup').textContent = metaRes ? `${metaRes.nome} (${metaRes.dataHora})` : '';
+
+      document.getElementById('badge-saldo').textContent = `${dataSaldo.length} linhas`;
+      document.getElementById('badge-saldo').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 shrink-0";
+      document.getElementById('saved-info-saldo').textContent = metaSaldo ? `${metaSaldo.nome} (${metaSaldo.dataHora})` : '';
+
+      document.getElementById('btn-limpar-cache').classList.remove('hidden');
+
+      const statusEl = document.getElementById('global-status');
+      statusEl.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> ${origemMensagem}`;
+      statusEl.className = "text-xs font-bold text-green-700 mr-1";
+    }
+
+    // Carregar automaticamente a última importação salva ao abrir a página
+    window.addEventListener('DOMContentLoaded', async () => {
+      const cacheRes = await lerCachePlanilha("ultima_ressup");
+      const cacheSaldo = await lerCachePlanilha("ultimo_saldo");
+
+      if (cacheRes && cacheSaldo && cacheRes.rows && cacheSaldo.rows) {
+        aplicarBasesNosModulos(
+          cacheRes.rows,
+          cacheSaldo.rows,
+          cacheRes.meta,
+          cacheSaldo.meta,
+          "Última importação restaurada automaticamente!"
+        );
+      } else {
+        if (cacheRes && cacheRes.rows) {
+          document.getElementById('badge-ressup').textContent = `${cacheRes.rows.length} (Salvo)`;
+          document.getElementById('badge-ressup').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0";
+          document.getElementById('saved-info-ressup').textContent = `${cacheRes.meta.nome}`;
+          document.getElementById('btn-limpar-cache').classList.remove('hidden');
+        }
+        if (cacheSaldo && cacheSaldo.rows) {
+          document.getElementById('badge-saldo').textContent = `${cacheSaldo.rows.length} (Salvo)`;
+          document.getElementById('badge-saldo').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0";
+          document.getElementById('saved-info-saldo').textContent = `${cacheSaldo.meta.nome}`;
+          document.getElementById('btn-limpar-cache').classList.remove('hidden');
+        }
+      }
+    });
+
+    document.getElementById('btn-limpar-cache').addEventListener('click', async () => {
+      await limparTodoCache();
+      document.getElementById('saved-info-ressup').textContent = '';
+      document.getElementById('saved-info-saldo').textContent = '';
+      document.getElementById('badge-ressup').textContent = 'Pendente';
+      document.getElementById('badge-ressup').className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0';
+      document.getElementById('badge-saldo').textContent = 'Pendente';
+      document.getElementById('badge-saldo').className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0';
+      document.getElementById('btn-limpar-cache').classList.add('hidden');
+      document.getElementById('global-status').textContent = 'Memória limpa. Carregue as planilhas.';
+      document.getElementById('global-status').className = 'text-xs font-medium text-gray-500 mr-1';
+      showGlobalAlert("Memória local das planilhas foi apagada.", "info");
+    });
 
     document.getElementById('btn-processar-tudo').addEventListener('click', async () => {
       const fileRes = document.getElementById('global-file-ressup').files[0];
       const fileSaldo = document.getElementById('global-file-saldo').files[0];
       const statusEl = document.getElementById('global-status');
 
-      if (!fileRes || !fileSaldo) {
-        showGlobalAlert("Selecione as planilhas de Ressuprimento e Saldo de Estoque antes de processar.", "erro");
+      const cacheRes = await lerCachePlanilha("ultima_ressup");
+      const cacheSaldo = await lerCachePlanilha("ultimo_saldo");
+
+      if (!fileRes && !cacheRes) {
+        showGlobalAlert("Selecione a planilha de Ressuprimento (nenhuma importação anterior salva).", "erro");
+        return;
+      }
+      if (!fileSaldo && !cacheSaldo) {
+        showGlobalAlert("Selecione a planilha de Saldo de Estoque (nenhuma importação anterior salva).", "erro");
         return;
       }
 
-      statusEl.textContent = "Processando planilhas...";
-      statusEl.className = "text-xs font-bold text-blue-600";
+      statusEl.textContent = "Processando e salvando na memória...";
+      statusEl.className = "text-xs font-bold text-blue-600 mr-1";
 
       try {
-        const [dataRes, dataSaldo] = await Promise.all([
-          lerPlanilhaUnificada(fileRes),
-          lerPlanilhaUnificada(fileSaldo)
-        ]);
+        const agoraStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-        ressuprimentoGlobal = dataRes;
+        let dataRes, metaRes;
+        if (fileRes) {
+          dataRes = await lerPlanilhaUnificada(fileRes);
+          metaRes = { nome: fileRes.name, dataHora: agoraStr };
+          await salvarCachePlanilha("ultima_ressup", { rows: dataRes, meta: metaRes });
+        } else {
+          dataRes = cacheRes.rows;
+          metaRes = cacheRes.meta;
+        }
 
-        // 1. Alimenta o Mapa de Atendimento (Aba 1)
-        processarMapaAtendimento(dataRes, dataSaldo);
+        let dataSaldo, metaSaldo;
+        if (fileSaldo) {
+          dataSaldo = await lerPlanilhaUnificada(fileSaldo);
+          metaSaldo = { nome: fileSaldo.name, dataHora: agoraStr };
+          await salvarCachePlanilha("ultimo_saldo", { rows: dataSaldo, meta: metaSaldo });
+        } else {
+          dataSaldo = cacheSaldo.rows;
+          metaSaldo = cacheSaldo.meta;
+        }
 
-        // 2. Alimenta o Controle de Lotes para Etiquetas (Aba 2)
-        prepararEstoqueEtiquetas(dataSaldo);
-
-        document.getElementById('badge-ressup').textContent = `${dataRes.length} linhas`;
-        document.getElementById('badge-ressup').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700";
-        document.getElementById('badge-saldo').textContent = `${dataSaldo.length} linhas`;
-        document.getElementById('badge-saldo').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700";
-
-        statusEl.innerHTML = '<i class="fas fa-check-circle text-green-600"></i> Base sincronizada nos dois módulos!';
-        statusEl.className = "text-xs font-bold text-green-700";
-        showGlobalAlert("Planilhas processadas com sucesso! Tanto o Mapa de Atendimento quanto o Gerador de Etiquetas estão prontos.", "sucesso");
+        aplicarBasesNosModulos(dataRes, dataSaldo, metaRes, metaSaldo, "Base atualizada e salva na memória!");
+        showGlobalAlert("Planilhas processadas e salvas na memória do navegador!", "sucesso");
 
       } catch (err) {
         console.error(err);
         statusEl.textContent = "Erro ao ler arquivos.";
-        statusEl.className = "text-xs font-bold text-red-600";
+        statusEl.className = "text-xs font-bold text-red-600 mr-1";
         showGlobalAlert("Erro ao ler as planilhas. Verifique se são arquivos Excel válidos.", "erro");
       }
     });
@@ -836,7 +1043,7 @@
     });
 
     // =========================================================================
-    // MÓDULO 2: LÓGICA DO GERADOR DE ETIQUETAS & FIREBASE
+    // MÓDULO 2: LÓGICA DO GERADOR DE ETIQUETAS, PDF ZEBRA & FIREBASE
     // =========================================================================
     function prepararEstoqueEtiquetas(normSaldo) {
       estoquePorEndereco = {};
@@ -864,6 +1071,112 @@
       }
     }
 
+    function processarAlocacaoEtiqueta(codigoInput, descRessup, enderecoEscolhido, qtdSolicitada, romaneioRessup) {
+      const chaveSaldo = `${codigoInput}-${enderecoEscolhido}`;
+      const lotesDisponiveis = estoquePorEndereco[chaveSaldo] || [];
+      const saldoTotalEndereco = lotesDisponiveis.reduce((acc, l) => acc + l.saldoAtual, 0);
+
+      if (saldoTotalEndereco === 0) {
+        showGlobalAlert(`O código ${codigoInput} não possui saldo positivo no endereço (${enderecoEscolhido}).`, "erro");
+        return false;
+      }
+      if (saldoTotalEndereco < qtdSolicitada) {
+        showGlobalAlert(`Saldo insuficiente! Endereço: ${enderecoEscolhido}. Solicitado: ${qtdSolicitada} | Disponível: ${saldoTotalEndereco}`, "erro");
+        return false;
+      }
+
+      let qtdRestante = qtdSolicitada;
+      for (let lote of lotesDisponiveis) {
+        if (qtdRestante <= 0) break;
+        if (lote.saldoAtual > 0) {
+          const qtdASeparar = Math.min(qtdRestante, lote.saldoAtual);
+          lote.saldoAtual -= qtdASeparar;
+          qtdRestante -= qtdASeparar;
+          etiquetasExportar.push({
+            ROMANEIO: romaneioRessup,
+            CÓDIGO: codigoInput,
+            "CÓD. LOCALIZADOR": lote.codigoLocalizador,
+            DESCRIÇÃO: descRessup,
+            QTD: qtdASeparar,
+            ENDEREÇO: enderecoEscolhido,
+            LOTE: lote.lote,
+            VALIDADE: lote.validade,
+            _chaveSaldo: chaveSaldo,
+            _lote: lote.lote,
+            _validade: lote.validade
+          });
+        }
+      }
+
+      document.getElementById('input-codigo').value = '';
+      document.getElementById('input-qtd').value = '';
+      document.getElementById('input-codigo').focus();
+      atualizarTabelaEtiquetas();
+      return true;
+    }
+
+    function abrirModalSelecaoEndereco(codigoInput, descRessup, qtdSolicitada, romaneioRessup, opcoesEnderecos) {
+      const modal = document.getElementById('modal-endereco-xxxxxx');
+      document.getElementById('xxxxxx-prod-info').textContent = `${codigoInput} - ${descRessup}`;
+      document.getElementById('xxxxxx-qtd-info').textContent = `${qtdSolicitada} un.`;
+
+      const container = document.getElementById('lista-enderecos-xxxxxx');
+      container.innerHTML = '';
+
+      opcoesEnderecos.forEach(opt => {
+        const suficiente = opt.saldoTotal >= qtdSolicitada;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.disabled = !suficiente;
+        btn.className = `w-full text-left border rounded-lg p-3 transition flex justify-between items-center ${
+          suficiente 
+            ? 'bg-white hover:bg-blue-50 border-gray-300 hover:border-blue-500 cursor-pointer shadow-sm' 
+            : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
+        }`;
+
+        const lotesResumo = opt.lotes.filter(l => l.saldoAtual > 0).map(l => `Lote: ${l.lote} (${l.saldoAtual} un)`).join(' | ');
+
+        btn.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-base text-gray-900">${opt.endereco}</span>
+              <span class="text-[11px] font-mono bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">Cód. Loc: ${opt.codigoLocalizador}</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">${lotesResumo}</p>
+          </div>
+          <div class="text-right">
+            <span class="block text-sm font-black ${suficiente ? 'text-green-600' : 'text-red-500'}">${opt.saldoTotal} un.</span>
+            <span class="text-[10px] font-bold uppercase ${suficiente ? 'text-blue-600' : 'text-red-400'}">
+              ${suficiente ? 'Clique para selecionar' : 'Saldo insuficiente'}
+            </span>
+          </div>
+        `;
+
+        if (suficiente) {
+          btn.addEventListener('click', () => {
+            const ok = processarAlocacaoEtiqueta(codigoInput, descRessup, opt.endereco, qtdSolicitada, romaneioRessup);
+            if (ok) {
+              modal.classList.add('hidden');
+              modal.classList.remove('flex');
+            }
+          });
+        }
+
+        container.appendChild(btn);
+      });
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    const fecharModalXxxxxx = () => {
+      const modal = document.getElementById('modal-endereco-xxxxxx');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+    document.getElementById('btn-fechar-xxxxxx').addEventListener('click', fecharModalXxxxxx);
+    document.getElementById('btn-cancelar-xxxxxx').addEventListener('click', fecharModalXxxxxx);
+
     document.getElementById('btn-adicionar').addEventListener('click', () => {
       const codigoInput = document.getElementById('input-codigo').value.trim();
       const qtdInputText = document.getElementById('input-qtd').value.trim();
@@ -874,35 +1187,42 @@
 
       const enderecoRessup = String(itemRessup["ENDERECO"] || "").trim().toUpperCase();
       const descRessup = itemRessup["DESCRICAO"] || "-";
+      const romaneioRessup = String(itemRessup["ROMANEIO"] || "").trim();
       const qtdSolicitada = qtdInputText !== "" ? parseNum(qtdInputText) : parseNum(itemRessup["QTDE PEDIDA"] || itemRessup["QTD"]);
 
       if (qtdSolicitada <= 0) return showGlobalAlert(`A quantidade para o código ${codigoInput} deve ser maior que zero.`, "erro");
 
-      const chaveSaldo = `${codigoInput}-${enderecoRessup}`;
-      const lotesDisponiveis = estoquePorEndereco[chaveSaldo] || [];
-      const saldoTotalEndereco = lotesDisponiveis.reduce((acc, l) => acc + l.saldoAtual, 0);
+      if (enderecoRessup === "XXXXXX") {
+        const prefixo = `${codigoInput}-`;
+        const opcoesEnderecos = [];
 
-      if (saldoTotalEndereco === 0) return showGlobalAlert(`O código ${codigoInput} não possui saldo positivo na origem (${enderecoRessup}).`, "erro");
-      if (saldoTotalEndereco < qtdSolicitada) return showGlobalAlert(`Saldo insuficiente! Origem: ${enderecoRessup}. Solicitado: ${qtdSolicitada} | Disponível: ${saldoTotalEndereco}`, "erro");
+        Object.keys(estoquePorEndereco).forEach(chave => {
+          if (chave.startsWith(prefixo)) {
+            const lotes = estoquePorEndereco[chave];
+            const saldoTotal = lotes.reduce((acc, l) => acc + l.saldoAtual, 0);
+            if (saldoTotal > 0) {
+              const enderecoReal = chave.substring(prefixo.length);
+              const codLoc = lotes.find(l => l.saldoAtual > 0)?.codigoLocalizador || "N/D";
+              opcoesEnderecos.push({
+                endereco: enderecoReal,
+                saldoTotal: saldoTotal,
+                codigoLocalizador: codLoc,
+                lotes: lotes
+              });
+            }
+          }
+        });
 
-      let qtdRestante = qtdSolicitada;
-      for (let lote of lotesDisponiveis) {
-        if (qtdRestante <= 0) break;
-        if (lote.saldoAtual > 0) {
-          const qtdASeparar = Math.min(qtdRestante, lote.saldoAtual);
-          lote.saldoAtual -= qtdASeparar;
-          qtdRestante -= qtdASeparar;
-          etiquetasExportar.push({
-            CÓDIGO: codigoInput, "CÓD. LOCALIZADOR": lote.codigoLocalizador, DESCRIÇÃO: descRessup, QTD: qtdASeparar,
-            ENDEREÇO: enderecoRessup, LOTE: lote.lote, VALIDADE: lote.validade, _chaveSaldo: chaveSaldo, _lote: lote.lote, _validade: lote.validade
-          });
+        if (opcoesEnderecos.length === 0) {
+          return showGlobalAlert(`Origem é XXXXXX, mas o código ${codigoInput} não possui saldo positivo em nenhum endereço da planilha de Saldo.`, "erro");
         }
+
+        opcoesEnderecos.sort((a, b) => b.saldoTotal - a.saldoTotal);
+        abrirModalSelecaoEndereco(codigoInput, descRessup, qtdSolicitada, romaneioRessup, opcoesEnderecos);
+        return;
       }
 
-      document.getElementById('input-codigo').value = '';
-      document.getElementById('input-qtd').value = '';
-      document.getElementById('input-codigo').focus();
-      atualizarTabelaEtiquetas();
+      processarAlocacaoEtiqueta(codigoInput, descRessup, enderecoRessup, qtdSolicitada, romaneioRessup);
     });
 
     document.getElementById('input-codigo').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('input-qtd').focus(); });
@@ -933,15 +1253,22 @@
 
     const atualizarTabelaEtiquetas = () => {
       const tbody = document.getElementById('tabela-corpo'); tbody.innerHTML = '';
-      document.getElementById('btn-exportar').disabled = etiquetasExportar.length === 0;
-      document.getElementById('btn-limpar').disabled = etiquetasExportar.length === 0;
+      const isEmpty = etiquetasExportar.length === 0;
+      document.getElementById('btn-exportar').disabled = isEmpty;
+      document.getElementById('btn-limpar').disabled = isEmpty;
+      document.getElementById('btn-somente-pdf').disabled = isEmpty;
 
-      if (etiquetasExportar.length === 0) tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>';
+      if (isEmpty) tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-500 italic">Nenhum produto adicionado à lista.</td></tr>';
       else etiquetasExportar.forEach((item, index) => {
         tbody.innerHTML += `<tr class="border-b hover:bg-gray-50 bg-white">
-          <td class="p-3 font-medium">${item.CÓDIGO}</td><td class="p-3 text-xs text-gray-500 font-mono">${item["CÓD. LOCALIZADOR"]}</td>
-          <td class="p-3 truncate max-w-[220px]" title="${item.DESCRIÇÃO}">${item.DESCRIÇÃO}</td><td class="p-3 font-bold text-blue-700">${item.QTD}</td>
-          <td class="p-3 font-semibold">${item.ENDEREÇO}</td><td class="p-3 text-xs font-mono whitespace-pre">${item.LOTE}</td><td class="p-3 text-xs">${item.VALIDADE}</td>
+          <td class="p-3 text-xs font-semibold text-gray-600">${item.ROMANEIO || '-'}</td>
+          <td class="p-3 font-medium">${item.CÓDIGO}</td>
+          <td class="p-3 text-xs text-gray-500 font-mono">${item["CÓD. LOCALIZADOR"]}</td>
+          <td class="p-3 truncate max-w-[200px]" title="${item.DESCRIÇÃO}">${item.DESCRIÇÃO}</td>
+          <td class="p-3 font-bold text-blue-700">${item.QTD}</td>
+          <td class="p-3 font-semibold">${item.ENDEREÇO}</td>
+          <td class="p-3 text-xs font-mono whitespace-pre">${item.LOTE}</td>
+          <td class="p-3 text-xs">${item.VALIDADE}</td>
           <td class="p-3 text-center"><button onclick="removerItemEtiqueta(${index})" class="text-red-500 hover:text-red-700 font-bold px-2">X</button></td></tr>`;
       });
       atualizarDashboardEtiquetas();
@@ -955,6 +1282,185 @@
       etiquetasExportar = [];
       atualizarTabelaEtiquetas();
       showGlobalAlert("Lista de etiquetas limpa e saldos restaurados.", "info");
+    });
+
+    // =========================================================================
+    // GERADOR DE PDF PARA BIPAGEM NA ZEBRA (ROMANEIO E CÓD. LOCALIZADOR EM BARRAS)
+    // =========================================================================
+    function gerarBarcodeDataURL(valor) {
+      const cleanVal = String(valor || "").trim();
+      if (!cleanVal || cleanVal === "N/D" || cleanVal === "-") return null;
+      try {
+        const canvas = document.createElement("canvas");
+        window.JsBarcode(canvas, cleanVal, {
+          format: "CODE128",
+          width: 2.2,         // Barras nítidas e compactas na medida certa
+          height: 36,         // Altura ideal para leitura rápida sem ficar gigante
+          displayValue: false,// Texto será desenhado limpo pelo jsPDF logo abaixo
+          margin: 4,          // Quiet zone (zona de silêncio) lateral para o leitor Zebra não falhar
+          background: "#ffffff",
+          lineColor: "#000000"
+        });
+        return {
+          dataUrl: canvas.toDataURL("image/png"),
+          widthPx: canvas.width,
+          heightPx: canvas.height
+        };
+      } catch (e) {
+        console.warn("Falha ao gerar código de barras para:", cleanVal, e);
+        return null;
+      }
+    }
+
+    function gerarPDFBipagemZebra(listaItens) {
+      if (!listaItens || listaItens.length === 0) return;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      const pageWidth = doc.internal.pageSize.getWidth();   // 210mm
+      const pageHeight = doc.internal.pageSize.getHeight(); // 297mm
+      const marginX = 12;
+      const contentWidth = pageWidth - marginX * 2;         // 186mm
+
+      const dataHoraEmissao = new Date().toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      const desenharCabecalhoPagina = (numPagina) => {
+        doc.setFillColor(30, 58, 138); // Azul escuro institucional
+        doc.rect(marginX, 10, contentWidth, 10, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("WMS RESSUPRIMENTO - FOLHA DE BIPAGEM (ZEBRA)", marginX + 3, 16.5);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.text(`Emissão: ${dataHoraEmissao}  |  Pág. ${numPagina}`, pageWidth - marginX - 3, 16.5, { align: "right" });
+        doc.setTextColor(0, 0, 0);
+      };
+
+      let paginaAtual = 1;
+      desenharCabecalhoPagina(paginaAtual);
+
+      let cursorY = 24;
+      // Altura de cada bloco de produto (36mm) + espaçamento vertical generoso entre itens (8mm) = 44mm
+      // Cabem ~6 itens por folha A4 com folga total entre os códigos de barra de cima e de baixo!
+      const cardHeight = 35;
+      const gapEntreItens = 8;
+
+      listaItens.forEach((item, idx) => {
+        // Verifica se cabe na folha atual; se não couber, quebra página
+        if (cursorY + cardHeight > pageHeight - 12) {
+          doc.addPage();
+          paginaAtual++;
+          desenharCabecalhoPagina(paginaAtual);
+          cursorY = 24;
+        }
+
+        // Caixa delimitadora sutil para isolar visualmente cada produto
+        doc.setDrawColor(180, 188, 200);
+        doc.setLineWidth(0.35);
+        doc.roundedRect(marginX, cursorY, contentWidth, cardHeight, 2, 2, "S");
+
+        // Faixa superior do card: Cód. Produto + Descrição + Quantidade em destaque
+        doc.setFillColor(243, 244, 246);
+        doc.rect(marginX + 0.2, cursorY + 0.2, contentWidth - 0.4, 9.5, "F");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(17, 24, 39);
+        const codTxt = `CÓD: ${item.CÓDIGO}`;
+        doc.text(codTxt, marginX + 3, cursorY + 6.5);
+
+        // Descrição do Produto (truncada se muito longa para não invadir a Qtd)
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(55, 65, 81);
+        const descMax = String(item.DESCRIÇÃO || "-").substring(0, 52);
+        doc.text(descMax, marginX + 34, cursorY + 6.5);
+
+        // Quantidade + Endereço de referência no canto direito do topo
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(29, 78, 216);
+        doc.text(`QTD: ${item.QTD} un`, pageWidth - marginX - 3, cursorY + 6.5, { align: "right" });
+
+        // Área inferior do card (Y = cursorY + 11 até cursorY + 34):
+        // Coluna Esquerda (X = marginX + 4): ROMANEIO em Código de Barras
+        // Coluna Direita  (X = marginX + 98): CÓD. LOCALIZADOR em Código de Barras (com referência do Endereço)
+        const areaBarcodeY = cursorY + 11.5;
+        const maxBarcodeW = 52; // Largura controlada (não fica gigante, mas tem ótima leitura)
+        const barcodeH = 11.5;  // Altura confortável para o feixe laser da Zebra
+
+        // --- 1. ROMANEIO (CÓDIGO DE BARRAS) ---
+        const romaneioVal = String(item.ROMANEIO || "").trim();
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.5);
+        doc.setTextColor(75, 85, 99);
+        doc.text("ROMANEIO:", marginX + 4, areaBarcodeY + 3);
+
+        const bcRomaneio = gerarBarcodeDataURL(romaneioVal);
+        if (bcRomaneio) {
+          // Calcula largura proporcional respeitando teto de 52mm
+          const ratio = bcRomaneio.widthPx / bcRomaneio.heightPx;
+          const renderW = Math.min(maxBarcodeW, barcodeH * ratio);
+          doc.addImage(bcRomaneio.dataUrl, "PNG", marginX + 4, areaBarcodeY + 4, renderW, barcodeH);
+
+          doc.setFont("courier", "bold");
+          doc.setFontSize(9);
+          doc.setTextColor(0, 0, 0);
+          doc.text(romaneioVal, marginX + 4 + renderW / 2, areaBarcodeY + 4 + barcodeH + 3.5, { align: "center" });
+        } else {
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(8.5);
+          doc.setTextColor(150, 150, 150);
+          doc.text(romaneioVal || "Sem Romaneio", marginX + 4, areaBarcodeY + 11);
+        }
+
+        // Linha divisória vertical central para separar bem os dois códigos de barra
+        doc.setDrawColor(220, 224, 230);
+        doc.setLineWidth(0.25);
+        doc.line(marginX + 90, cursorY + 11, marginX + 90, cursorY + cardHeight - 2);
+
+        // --- 2. CÓDIGO DO LOCALIZADOR (CÓDIGO DE BARRAS) ---
+        const codLocVal = String(item["CÓD. LOCALIZADOR"] || "").trim();
+        const colDirX = marginX + 95;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.5);
+        doc.setTextColor(75, 85, 99);
+        doc.text(`CÓD. LOCALIZADOR (End: ${item.ENDEREÇO}):`, colDirX, areaBarcodeY + 3);
+
+        const bcLocalizador = gerarBarcodeDataURL(codLocVal);
+        if (bcLocalizador) {
+          const ratioLoc = bcLocalizador.widthPx / bcLocalizador.heightPx;
+          const renderWLoc = Math.min(maxBarcodeW, barcodeH * ratioLoc);
+          doc.addImage(bcLocalizador.dataUrl, "PNG", colDirX, areaBarcodeY + 4, renderWLoc, barcodeH);
+
+          doc.setFont("courier", "bold");
+          doc.setFontSize(9);
+          doc.setTextColor(0, 0, 0);
+          doc.text(codLocVal, colDirX + renderWLoc / 2, areaBarcodeY + 4 + barcodeH + 3.5, { align: "center" });
+        } else {
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(8.5);
+          doc.setTextColor(150, 150, 150);
+          doc.text(codLocVal || "N/D", colDirX, areaBarcodeY + 11);
+        }
+
+        // Avança cursorY somando a altura do card + o espaçamento de segurança entre produtos
+        cursorY += cardHeight + gapEntreItens;
+      });
+
+      doc.save("Etiquetas_Bipagem_Zebra.pdf");
+    }
+
+    document.getElementById('btn-somente-pdf').addEventListener('click', () => {
+      if (etiquetasExportar.length === 0) return;
+      gerarPDFBipagemZebra(etiquetasExportar);
+      showGlobalAlert("PDF de bipagem (Zebra) gerado com sucesso!", "sucesso");
     });
 
     document.getElementById('btn-exportar').addEventListener('click', async () => {
@@ -985,16 +1491,25 @@
       const ws = window.XLSX.utils.json_to_sheet(dadosLimpos);
       const range = window.XLSX.utils.decode_range(ws['!ref']);
       for (let R = 1; R <= range.e.r; ++R) {
-        const cellLoc = ws[window.XLSX.utils.encode_cell({ r: R, c: 1 })];
-        if (cellLoc) { cellLoc.t = 's'; cellLoc.v = String(cellLoc.v); }
-        const cellLote = ws[window.XLSX.utils.encode_cell({ r: R, c: 5 })];
-        if (cellLote) { cellLote.t = 's'; cellLote.v = String(cellLote.v); }
+        // Força formato de Texto ('s' e z='@') em CÓDIGO (0), CÓD. LOCALIZADOR (1), LOTE (5) e VALIDADE (6)
+        [0, 1, 5, 6].forEach(colIdx => {
+          const cell = ws[window.XLSX.utils.encode_cell({ r: R, c: colIdx })];
+          if (cell) {
+            cell.t = 's';
+            cell.v = String(cell.v);
+            cell.z = '@';
+          }
+        });
       }
 
       const wb = window.XLSX.utils.book_new();
       window.XLSX.utils.book_append_sheet(wb, ws, "Etiquetas");
       window.XLSX.writeFile(wb, "Etiquetas_Exportadas.xls", { bookType: 'xls' });
-      showGlobalAlert('Arquivo .xls exportado e histórico salvo no Firebase!', 'sucesso');
+
+      // Gera imediatamente o PDF com Romaneio e Cód. Localizador em código de barras
+      gerarPDFBipagemZebra(etiquetasExportar);
+
+      showGlobalAlert('Planilha (.xls) e PDF de bipagem Zebra gerados, e histórico salvo no Firebase!', 'sucesso');
     });
 
     // =========================================================================
@@ -1075,3 +1590,4 @@
   </script>
 </body>
 </html>
+Processado e analisado em código
