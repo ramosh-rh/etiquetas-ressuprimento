@@ -53,31 +53,44 @@
   <section class="bg-white border-b shadow-sm shrink-0">
     <div class="max-w-7xl mx-auto px-4 py-4">
       <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full lg:w-auto flex-1">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 w-full lg:w-auto flex-1">
           <!-- Ressuprimento -->
-          <div class="flex items-center gap-3 border rounded-lg px-3 py-2 bg-gray-50">
-            <i class="fas fa-file-excel text-green-600 text-xl"></i>
+          <div class="flex items-center gap-2.5 border rounded-lg px-3 py-2 bg-gray-50">
+            <i class="fas fa-file-excel text-green-600 text-lg"></i>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between">
-                <label class="block text-xs font-bold text-gray-700 uppercase">1. Planilha Ressuprimento</label>
-                <span id="saved-info-ressup" class="text-[10px] text-gray-400 truncate max-w-[140px]"></span>
+                <label class="block text-[11px] font-bold text-gray-700 uppercase">1. Ressuprimento</label>
+                <span id="saved-info-ressup" class="text-[10px] text-gray-400 truncate max-w-[110px]"></span>
               </div>
-              <input type="file" id="global-file-ressup" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer mt-0.5">
+              <input type="file" id="global-file-ressup" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer mt-0.5">
             </div>
-            <span id="badge-ressup" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">Pendente</span>
+            <span id="badge-ressup" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">Pendente</span>
           </div>
 
           <!-- Saldo de Estoque -->
-          <div class="flex items-center gap-3 border rounded-lg px-3 py-2 bg-gray-50">
-            <i class="fas fa-boxes text-blue-600 text-xl"></i>
+          <div class="flex items-center gap-2.5 border rounded-lg px-3 py-2 bg-gray-50">
+            <i class="fas fa-boxes text-blue-600 text-lg"></i>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between">
-                <label class="block text-xs font-bold text-gray-700 uppercase">2. Saldo de Estoque</label>
-                <span id="saved-info-saldo" class="text-[10px] text-gray-400 truncate max-w-[140px]"></span>
+                <label class="block text-[11px] font-bold text-gray-700 uppercase">2. Saldo de Estoque</label>
+                <span id="saved-info-saldo" class="text-[10px] text-gray-400 truncate max-w-[110px]"></span>
               </div>
-              <input type="file" id="global-file-saldo" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer mt-0.5">
+              <input type="file" id="global-file-saldo" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer mt-0.5">
             </div>
-            <span id="badge-saldo" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">Pendente</span>
+            <span id="badge-saldo" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">Pendente</span>
+          </div>
+
+          <!-- Estoque Atual (Fallback de Picking) -->
+          <div class="flex items-center gap-2.5 border rounded-lg px-3 py-2 bg-gray-50">
+            <i class="fas fa-layer-group text-indigo-600 text-lg"></i>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <label class="block text-[11px] font-bold text-gray-700 uppercase" title="Usado para localizar o Picking de Separação quando o produto não constar no Saldo de Estoque">3. Estoque Atual (Picking)</label>
+                <span id="saved-info-estoque-atual" class="text-[10px] text-gray-400 truncate max-w-[110px]"></span>
+              </div>
+              <input type="file" id="global-file-estoque-atual" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer mt-0.5">
+            </div>
+            <span id="badge-estoque-atual" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0">Opcional</span>
           </div>
         </div>
 
@@ -232,7 +245,7 @@
               </button>
             </div>
           </div>
-          <p class="text-xs text-gray-500 mt-2">Deixe a Qtd vazia para puxar o pedido total da planilha. Origem <b>XXXXXX</b> abre seleção de saldo.</p>
+          <p class="text-xs text-gray-500 mt-2">Ao adicionar, o sistema abre o painel com a <b>Reserva Sugerida</b> e todos os outros endereços disponíveis. Na tabela abaixo, clique no ícone <i class="fas fa-edit text-blue-600"></i> na coluna <b>LOTE</b> para alterar lote/validade se necessário.</p>
         </div>
 
         <!-- Cards Indicadores da Sessão -->
@@ -555,6 +568,7 @@
               <th class="p-3 border-b">Descrição</th>
               <th class="p-3 border-b">End. Origem</th>
               <th class="p-3 border-b">Picking Separação</th>
+              <th class="p-3 border-b text-center">Base Picking</th>
               <th class="p-3 border-b">Setor</th>
               <th class="p-3 border-b text-center">Tipo Origem</th>
               <th class="p-3 border-b text-right">Qtd. Total</th>
@@ -736,32 +750,110 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- MODAL 3: SELEÇÃO DE ENDEREÇO ALTERNATIVO (QUANDO ORIGEM FOR XXXXXX)   -->
+  <!-- MODAL 3: SELEÇÃO DE ENDEREÇO (RESERVA SUGERIDA + OUTROS ENDEREÇOS)    -->
   <!-- ===================================================================== -->
-  <div id="modal-endereco-xxxxxx" class="fixed inset-0 bg-black bg-opacity-60 hidden justify-center items-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[85vh]">
-      <div class="flex justify-between items-center p-5 border-b bg-amber-50 rounded-t-lg">
+  <div id="modal-selecao-endereco" class="fixed inset-0 bg-black bg-opacity-60 hidden justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl flex flex-col max-h-[88vh]">
+      <div class="flex justify-between items-center p-5 border-b bg-blue-900 text-white rounded-t-lg">
         <div>
-          <h2 class="text-lg font-bold text-amber-900"><i class="fas fa-map-marker-alt text-amber-600 mr-2"></i>Origem Indefinida (XXXXXX)</h2>
-          <p class="text-xs text-amber-700 mt-0.5" id="modal-xxxxxx-subtitulo">Selecione o endereço de onde deseja retirar o saldo:</p>
+          <h2 class="text-lg font-bold"><i class="fas fa-map-marked-alt text-blue-300 mr-2"></i>Seleção de Endereço para Etiqueta</h2>
+          <p class="text-xs text-blue-200 mt-0.5" id="modal-sel-end-subtitulo">Confirme a Reserva Sugerida pelo mapa ou escolha outro endereço disponível no estoque:</p>
         </div>
-        <button id="btn-fechar-xxxxxx" class="text-gray-500 hover:text-red-600 font-bold text-2xl leading-none">&times;</button>
+        <button id="btn-fechar-sel-end" class="text-blue-200 hover:text-white font-bold text-2xl leading-none">&times;</button>
       </div>
       
-      <div class="p-5 overflow-y-auto flex-1">
-        <div class="bg-gray-50 border rounded-lg p-3 mb-4 text-xs flex flex-wrap justify-between gap-2">
-          <div><span class="font-bold text-gray-600">PRODUTO:</span> <span id="xxxxxx-prod-info" class="font-bold text-gray-900"></span></div>
-          <div><span class="font-bold text-gray-600">QTD SOLICITADA:</span> <span id="xxxxxx-qtd-info" class="font-bold text-blue-700 text-sm"></span></div>
+      <div class="p-5 overflow-y-auto flex-1 space-y-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3.5 text-xs flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <span class="font-bold text-blue-900 uppercase block text-[10px]">Produto Selecionado</span>
+            <span id="sel-end-prod-info" class="font-extrabold text-gray-900 text-sm"></span>
+          </div>
+          <div class="flex items-center gap-4">
+            <div>
+              <span class="font-bold text-blue-900 uppercase block text-[10px]">Reserva Sugerida (Mapa)</span>
+              <span id="sel-end-sugerido-badge" class="font-mono font-bold text-blue-800 bg-white border border-blue-300 px-2 py-0.5 rounded inline-block mt-0.5"></span>
+            </div>
+            <div class="text-right">
+              <span class="font-bold text-blue-900 uppercase block text-[10px]">Qtd. a Separar</span>
+              <span id="sel-end-qtd-info" class="font-black text-blue-700 text-base"></span>
+            </div>
+          </div>
         </div>
 
-        <p class="text-xs font-bold text-gray-600 uppercase mb-2">Endereços Disponíveis com Saldo Positivo:</p>
-        <div id="lista-enderecos-xxxxxx" class="space-y-2">
-          <!-- Cards de endereços injetados via JS -->
+        <!-- Seção 1: Reserva Sugerida -->
+        <div>
+          <p class="text-xs font-extrabold text-blue-950 uppercase mb-2 flex items-center gap-1.5">
+            <i class="fas fa-star text-amber-500"></i> Endereço da Reserva Sugerida (Mapa de Ressuprimento)
+          </p>
+          <div id="box-reserva-sugerida" class="space-y-2"></div>
+        </div>
+
+        <!-- Seção 2: Outros Endereços Disponíveis -->
+        <div id="sec-outros-enderecos">
+          <p class="text-xs font-extrabold text-gray-700 uppercase mb-2 flex items-center gap-1.5 pt-2 border-t">
+            <i class="fas fa-warehouse text-gray-500"></i> Outros Endereços Disponíveis no Estoque
+          </p>
+          <div id="lista-outros-enderecos" class="space-y-2"></div>
         </div>
       </div>
 
-      <div class="px-5 py-3 border-t bg-gray-50 text-right rounded-b-lg">
-        <button id="btn-cancelar-xxxxxx" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-1.5 px-4 rounded text-sm">Cancelar</button>
+      <div class="px-5 py-3 border-t bg-gray-50 flex justify-between items-center rounded-b-lg">
+        <span class="text-[11px] text-gray-500"><i class="fas fa-info-circle mr-1"></i>Dica: Pressione <b>Enter</b> para confirmar rapidamente a Reserva Sugerida</span>
+        <button id="btn-cancelar-sel-end" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-1.5 px-4 rounded text-sm">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 6: ALTERAR LOTE / VALIDADE DA ETIQUETA NA LISTA                 -->
+  <!-- ===================================================================== -->
+  <div id="modal-editar-lote" class="fixed inset-0 bg-black bg-opacity-60 hidden justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center p-4 border-b bg-blue-900 text-white rounded-t-lg">
+        <div>
+          <h3 class="text-base font-bold"><i class="fas fa-edit text-blue-300 mr-2"></i>Alterar Lote da Etiqueta</h3>
+          <p class="text-xs text-blue-200 mt-0.5" id="edit-lote-subtitulo">Selecione outro lote disponível neste endereço ou informe manualmente:</p>
+        </div>
+        <button onclick="fecharModalEditarLote()" class="text-blue-200 hover:text-white font-bold text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-4">
+        <div class="bg-gray-50 border rounded-lg p-3 text-xs space-y-1">
+          <div><span class="font-bold text-gray-600">PRODUTO:</span> <span id="edit-lote-prod" class="font-bold text-gray-900"></span></div>
+          <div class="flex justify-between">
+            <span><span class="font-bold text-gray-600">ENDEREÇO:</span> <span id="edit-lote-end" class="font-mono font-bold text-blue-800"></span></span>
+            <span><span class="font-bold text-gray-600">QTD ETIQUETA:</span> <span id="edit-lote-qtd" class="font-bold text-blue-700"></span></span>
+          </div>
+          <div><span class="font-bold text-gray-600">LOTE ATUAL:</span> <span id="edit-lote-atual" class="font-mono font-bold text-amber-800"></span></div>
+        </div>
+
+        <!-- Opções de lotes no mesmo endereço -->
+        <div>
+          <p class="text-xs font-bold text-gray-700 uppercase mb-2">Lotes Disponíveis neste Endereço (Saldo de Estoque):</p>
+          <div id="edit-lote-opcoes" class="space-y-1.5 max-h-44 overflow-y-auto"></div>
+        </div>
+
+        <!-- Edição manual de Lote e Validade -->
+        <div class="border-t pt-3">
+          <p class="text-xs font-bold text-gray-700 uppercase mb-2">Ou Editar Lote / Validade Manualmente:</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Novo Lote</label>
+              <input type="text" id="input-novo-lote" placeholder="Ex: L2409A" class="w-full px-3 py-1.5 border rounded text-xs font-mono uppercase focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Validade (MM/AAAA)</label>
+              <input type="text" id="input-nova-validade" placeholder="Ex: 10/2028" class="w-full px-3 py-1.5 border rounded text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-4 py-3 border-t bg-gray-50 flex justify-end gap-2 rounded-b-lg">
+        <button onclick="fecharModalEditarLote()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-1.5 px-4 rounded text-xs">Cancelar</button>
+        <button id="btn-salvar-edicao-lote" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-1.5 px-4 rounded text-xs shadow">
+          <i class="fas fa-check mr-1"></i> Salvar Alteração
+        </button>
       </div>
     </div>
   </div>
@@ -990,7 +1082,15 @@
       const badge = document.getElementById('badge-saldo');
       if (e.target.files.length > 0) {
         badge.textContent = "Novo Arquivo";
-        badge.className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700 shrink-0";
+        badge.className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700 shrink-0";
+      }
+    });
+
+    document.getElementById('global-file-estoque-atual').addEventListener('change', (e) => {
+      const badge = document.getElementById('badge-estoque-atual');
+      if (e.target.files.length > 0) {
+        badge.textContent = "Novo Arquivo";
+        badge.className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 shrink-0";
       }
     });
 
@@ -1001,25 +1101,36 @@
     let estoquePorEndereco = {};
     let etiquetasExportar = [];
 
-    function aplicarBasesNosModulos(dataRes, dataSaldo, metaRes, metaSaldo, origemMensagem) {
+    function aplicarBasesNosModulos(dataRes, dataSaldo, dataEstoqueAtual, metaRes, metaSaldo, metaEstoqueAtual, origemMensagem) {
       ressuprimentoGlobal = dataRes;
+      const baseEstAtual = Array.isArray(dataEstoqueAtual) ? dataEstoqueAtual : [];
 
       // 1. Alimenta o Mapa de Atendimento (Aba 1)
       processarMapaAtendimento(dataRes, dataSaldo);
 
-      // 2. Alimenta a Aba Atendimento (Consolidação de Setores & Percentuais)
-      processarAbaAtendimento(dataRes, dataSaldo);
+      // 2. Alimenta a Aba Atendimento (Consolidação de Setores & Percentuais com fallback Estoque Atual)
+      processarAbaAtendimento(dataRes, dataSaldo, baseEstAtual);
 
       // 3. Alimenta o Controle de Lotes para Etiquetas (Aba 2)
       prepararEstoqueEtiquetas(dataSaldo);
 
       document.getElementById('badge-ressup').textContent = `${dataRes.length} linhas`;
-      document.getElementById('badge-ressup').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 shrink-0";
+      document.getElementById('badge-ressup').className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 shrink-0";
       document.getElementById('saved-info-ressup').textContent = metaRes ? `${metaRes.nome} (${metaRes.dataHora})` : '';
 
       document.getElementById('badge-saldo').textContent = `${dataSaldo.length} linhas`;
-      document.getElementById('badge-saldo').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 shrink-0";
+      document.getElementById('badge-saldo').className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 shrink-0";
       document.getElementById('saved-info-saldo').textContent = metaSaldo ? `${metaSaldo.nome} (${metaSaldo.dataHora})` : '';
+
+      if (baseEstAtual.length > 0) {
+        document.getElementById('badge-estoque-atual').textContent = `${baseEstAtual.length} linhas`;
+        document.getElementById('badge-estoque-atual').className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-green-100 text-green-700 shrink-0";
+        document.getElementById('saved-info-estoque-atual').textContent = metaEstoqueAtual ? `${metaEstoqueAtual.nome} (${metaEstoqueAtual.dataHora})` : '';
+      } else {
+        document.getElementById('badge-estoque-atual').textContent = 'Opcional';
+        document.getElementById('badge-estoque-atual').className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0";
+        document.getElementById('saved-info-estoque-atual').textContent = '';
+      }
 
       document.getElementById('btn-limpar-cache').classList.remove('hidden');
 
@@ -1032,26 +1143,35 @@
     window.addEventListener('DOMContentLoaded', async () => {
       const cacheRes = await lerCachePlanilha("ultima_ressup");
       const cacheSaldo = await lerCachePlanilha("ultimo_saldo");
+      const cacheEstAtual = await lerCachePlanilha("ultimo_estoque_atual");
 
       if (cacheRes && cacheSaldo && cacheRes.rows && cacheSaldo.rows) {
         aplicarBasesNosModulos(
           cacheRes.rows,
           cacheSaldo.rows,
+          cacheEstAtual ? cacheEstAtual.rows : [],
           cacheRes.meta,
           cacheSaldo.meta,
+          cacheEstAtual ? cacheEstAtual.meta : null,
           "Última importação restaurada automaticamente!"
         );
       } else {
         if (cacheRes && cacheRes.rows) {
           document.getElementById('badge-ressup').textContent = `${cacheRes.rows.length} (Salvo)`;
-          document.getElementById('badge-ressup').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0";
+          document.getElementById('badge-ressup').className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0";
           document.getElementById('saved-info-ressup').textContent = `${cacheRes.meta.nome}`;
           document.getElementById('btn-limpar-cache').classList.remove('hidden');
         }
         if (cacheSaldo && cacheSaldo.rows) {
           document.getElementById('badge-saldo').textContent = `${cacheSaldo.rows.length} (Salvo)`;
-          document.getElementById('badge-saldo').className = "text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0";
+          document.getElementById('badge-saldo').className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0";
           document.getElementById('saved-info-saldo').textContent = `${cacheSaldo.meta.nome}`;
+          document.getElementById('btn-limpar-cache').classList.remove('hidden');
+        }
+        if (cacheEstAtual && cacheEstAtual.rows) {
+          document.getElementById('badge-estoque-atual').textContent = `${cacheEstAtual.rows.length} (Salvo)`;
+          document.getElementById('badge-estoque-atual').className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0";
+          document.getElementById('saved-info-estoque-atual').textContent = `${cacheEstAtual.meta.nome}`;
           document.getElementById('btn-limpar-cache').classList.remove('hidden');
         }
       }
@@ -1061,10 +1181,13 @@
       await limparTodoCache();
       document.getElementById('saved-info-ressup').textContent = '';
       document.getElementById('saved-info-saldo').textContent = '';
+      document.getElementById('saved-info-estoque-atual').textContent = '';
       document.getElementById('badge-ressup').textContent = 'Pendente';
-      document.getElementById('badge-ressup').className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0';
+      document.getElementById('badge-ressup').className = 'text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0';
       document.getElementById('badge-saldo').textContent = 'Pendente';
-      document.getElementById('badge-saldo').className = 'text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0';
+      document.getElementById('badge-saldo').className = 'text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0';
+      document.getElementById('badge-estoque-atual').textContent = 'Opcional';
+      document.getElementById('badge-estoque-atual').className = 'text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-200 text-gray-600 shrink-0';
       document.getElementById('btn-limpar-cache').classList.add('hidden');
       document.getElementById('global-status').textContent = 'Memória limpa. Carregue as planilhas.';
       document.getElementById('global-status').className = 'text-xs font-medium text-gray-500 mr-1';
@@ -1074,10 +1197,12 @@
     document.getElementById('btn-processar-tudo').addEventListener('click', async () => {
       const fileRes = document.getElementById('global-file-ressup').files[0];
       const fileSaldo = document.getElementById('global-file-saldo').files[0];
+      const fileEstAtual = document.getElementById('global-file-estoque-atual').files[0];
       const statusEl = document.getElementById('global-status');
 
       const cacheRes = await lerCachePlanilha("ultima_ressup");
       const cacheSaldo = await lerCachePlanilha("ultimo_saldo");
+      const cacheEstAtual = await lerCachePlanilha("ultimo_estoque_atual");
 
       if (!fileRes && !cacheRes) {
         showGlobalAlert("Selecione a planilha de Ressuprimento (nenhuma importação anterior salva).", "erro");
@@ -1114,7 +1239,17 @@
           metaSaldo = cacheSaldo.meta;
         }
 
-        aplicarBasesNosModulos(dataRes, dataSaldo, metaRes, metaSaldo, "Base atualizada e salva na memória!");
+        let dataEstAtual = [], metaEstAtual = null;
+        if (fileEstAtual) {
+          dataEstAtual = await lerPlanilhaUnificada(fileEstAtual);
+          metaEstAtual = { nome: fileEstAtual.name, dataHora: agoraStr };
+          await salvarCachePlanilha("ultimo_estoque_atual", { rows: dataEstAtual, meta: metaEstAtual });
+        } else if (cacheEstAtual && cacheEstAtual.rows) {
+          dataEstAtual = cacheEstAtual.rows;
+          metaEstAtual = cacheEstAtual.meta;
+        }
+
+        aplicarBasesNosModulos(dataRes, dataSaldo, dataEstAtual, metaRes, metaSaldo, metaEstAtual, "Base atualizada e salva na memória!");
         showGlobalAlert("Planilhas processadas e salvas na memória do navegador!", "sucesso");
 
       } catch (err) {
@@ -1466,67 +1601,139 @@
       return true;
     }
 
-    function abrirModalSelecaoEndereco(codigoInput, descRessup, qtdSolicitada, romaneioRessup, opcoesEnderecos) {
-      const modal = document.getElementById('modal-endereco-xxxxxx');
-      document.getElementById('xxxxxx-prod-info').textContent = `${codigoInput} - ${descRessup}`;
-      document.getElementById('xxxxxx-qtd-info').textContent = `${qtdSolicitada} un.`;
+    let sugestaoConfirmarEnter = null;
 
-      const container = document.getElementById('lista-enderecos-xxxxxx');
-      container.innerHTML = '';
+    function criarCardOpcaoEndereco(opt, qtdSolicitada, isSugerido, onSelecionar) {
+      const suficiente = opt.saldoTotal >= qtdSolicitada;
+      const temSaldo = opt.saldoTotal > 0;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.disabled = !suficiente;
 
-      opcoesEnderecos.forEach(opt => {
-        const suficiente = opt.saldoTotal >= qtdSolicitada;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.disabled = !suficiente;
+      if (isSugerido) {
+        btn.className = `w-full text-left border-2 rounded-lg p-3.5 transition flex justify-between items-center ${
+          suficiente
+            ? 'bg-blue-50/70 hover:bg-blue-100 border-blue-600 cursor-pointer shadow-sm'
+            : 'bg-red-50/60 border-red-300 opacity-85 cursor-not-allowed'
+        }`;
+      } else {
         btn.className = `w-full text-left border rounded-lg p-3 transition flex justify-between items-center ${
-          suficiente 
-            ? 'bg-white hover:bg-blue-50 border-gray-300 hover:border-blue-500 cursor-pointer shadow-sm' 
+          suficiente
+            ? 'bg-white hover:bg-blue-50 border-gray-300 hover:border-blue-500 cursor-pointer shadow-sm'
             : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed'
         }`;
+      }
 
-        const lotesResumo = opt.lotes.filter(l => l.saldoAtual > 0).map(l => `Lote: ${l.lote} (${l.saldoAtual} un)`).join(' | ');
+      const lotesAtivos = opt.lotes.filter(l => l.saldoAtual > 0);
+      const lotesResumo = lotesAtivos.length > 0
+        ? lotesAtivos.map(l => `<span class="inline-block bg-gray-100 border border-gray-200 rounded px-1.5 py-0.5 mr-1 mb-0.5 font-mono text-[11px]">Lote: <b>${l.lote}</b> | Val: ${l.validade} (${l.saldoAtual} un)</span>`).join('')
+        : '<span class="text-red-500 font-semibold">Sem saldo positivo neste endereço</span>';
 
-        btn.innerHTML = `
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-base text-gray-900">${opt.endereco}</span>
-              <span class="text-[11px] font-mono bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">Cód. Loc: ${opt.codigoLocalizador}</span>
-            </div>
-            <p class="text-xs text-gray-500 mt-1">${lotesResumo}</p>
+      const tagSugerido = isSugerido
+        ? `<span class="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-700 text-white">Reserva Sugerida</span>`
+        : `<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-gray-200 text-gray-700">Alternativo</span>`;
+
+      btn.innerHTML = `
+        <div class="pr-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-mono font-black text-base text-gray-900">${opt.endereco}</span>
+            ${tagSugerido}
+            <span class="text-[11px] font-mono bg-white border text-gray-700 px-1.5 py-0.5 rounded">Cód. Loc: ${opt.codigoLocalizador}</span>
           </div>
-          <div class="text-right">
-            <span class="block text-sm font-black ${suficiente ? 'text-green-600' : 'text-red-500'}">${opt.saldoTotal} un.</span>
-            <span class="text-[10px] font-bold uppercase ${suficiente ? 'text-blue-600' : 'text-red-400'}">
-              ${suficiente ? 'Clique para selecionar' : 'Saldo insuficiente'}
-            </span>
-          </div>
-        `;
+          <div class="mt-1.5">${lotesResumo}</div>
+        </div>
+        <div class="text-right shrink-0">
+          <span class="block text-base font-black ${suficiente ? 'text-green-600' : 'text-red-600'}">${opt.saldoTotal} un.</span>
+          <span class="text-[10px] font-bold uppercase ${suficiente ? 'text-blue-700' : 'text-red-500'}">
+            ${suficiente ? (isSugerido ? 'Confirmar (Enter)' : 'Selecionar Endereço') : (temSaldo ? 'Saldo Insuficiente' : 'Zerado')}
+          </span>
+        </div>
+      `;
 
-        if (suficiente) {
-          btn.addEventListener('click', () => {
-            const ok = processarAlocacaoEtiqueta(codigoInput, descRessup, opt.endereco, qtdSolicitada, romaneioRessup);
-            if (ok) {
-              modal.classList.add('hidden');
-              modal.classList.remove('flex');
-            }
-          });
+      if (suficiente) {
+        btn.addEventListener('click', () => onSelecionar(opt.endereco));
+      }
+      return btn;
+    }
+
+    function abrirModalSelecaoEndereco(codigoInput, descRessup, qtdSolicitada, romaneioRessup, enderecoSugerido, opcoesEnderecos) {
+      const modal = document.getElementById('modal-selecao-endereco');
+      document.getElementById('sel-end-prod-info').textContent = `${codigoInput} - ${descRessup}`;
+      document.getElementById('sel-end-qtd-info').textContent = `${qtdSolicitada} un.`;
+
+      const isIndefinido = !enderecoSugerido || enderecoSugerido === 'XXXXXX' || enderecoSugerido === 'XXX';
+      document.getElementById('sel-end-sugerido-badge').textContent = isIndefinido ? 'INDEFINIDO (XXXXXX)' : enderecoSugerido;
+
+      const boxSugerida = document.getElementById('box-reserva-sugerida');
+      const listaOutros = document.getElementById('lista-outros-enderecos');
+      boxSugerida.innerHTML = '';
+      listaOutros.innerHTML = '';
+      sugestaoConfirmarEnter = null;
+
+      const confirmarEscolha = (enderecoEscolhido) => {
+        const ok = processarAlocacaoEtiqueta(codigoInput, descRessup, enderecoEscolhido, qtdSolicitada, romaneioRessup);
+        if (ok) fecharModalSelecaoEndereco();
+      };
+
+      // Localiza a opção da Reserva Sugerida (mesmo se estiver sem saldo suficiente, para alertar visualmente)
+      let optSugerida = null;
+      const outrasOpcoes = [];
+
+      opcoesEnderecos.forEach(opt => {
+        if (!isIndefinido && opt.endereco === enderecoSugerido) {
+          optSugerida = opt;
+        } else {
+          outrasOpcoes.push(opt);
         }
-
-        container.appendChild(btn);
       });
+
+      if (isIndefinido) {
+        boxSugerida.innerHTML = `<div class="p-3 rounded-lg border border-amber-300 bg-amber-50 text-xs text-amber-900 font-semibold">
+          <i class="fas fa-exclamation-circle mr-1"></i> O mapa de ressuprimento veio com origem <b>XXXXXX</b>. Selecione um dos endereços disponíveis abaixo:
+        </div>`;
+      } else if (optSugerida) {
+        const cardSug = criarCardOpcaoEndereco(optSugerida, qtdSolicitada, true, confirmarEscolha);
+        boxSugerida.appendChild(cardSug);
+        if (optSugerida.saldoTotal >= qtdSolicitada) {
+          sugestaoConfirmarEnter = () => confirmarEscolha(optSugerida.endereco);
+        }
+      } else {
+        boxSugerida.innerHTML = `<div class="p-3 rounded-lg border border-red-300 bg-red-50 text-xs text-red-800 font-semibold">
+          <i class="fas fa-times-circle mr-1"></i> A Reserva Sugerida (<b>${enderecoSugerido}</b>) não possui saldo positivo na planilha de Saldo de Estoque. Escolha outro endereço abaixo:
+        </div>`;
+      }
+
+      if (outrasOpcoes.length === 0) {
+        listaOutros.innerHTML = `<p class="text-xs text-gray-400 italic p-2">Nenhum outro endereço com saldo positivo encontrado para este produto.</p>`;
+      } else {
+        outrasOpcoes.forEach(opt => {
+          listaOutros.appendChild(criarCardOpcaoEndereco(opt, qtdSolicitada, false, confirmarEscolha));
+        });
+      }
 
       modal.classList.remove('hidden');
       modal.classList.add('flex');
     }
 
-    const fecharModalXxxxxx = () => {
-      const modal = document.getElementById('modal-endereco-xxxxxx');
+    const fecharModalSelecaoEndereco = () => {
+      const modal = document.getElementById('modal-selecao-endereco');
       modal.classList.add('hidden');
       modal.classList.remove('flex');
+      sugestaoConfirmarEnter = null;
     };
-    document.getElementById('btn-fechar-xxxxxx').addEventListener('click', fecharModalXxxxxx);
-    document.getElementById('btn-cancelar-xxxxxx').addEventListener('click', fecharModalXxxxxx);
+    document.getElementById('btn-fechar-sel-end').addEventListener('click', fecharModalSelecaoEndereco);
+    document.getElementById('btn-cancelar-sel-end').addEventListener('click', fecharModalSelecaoEndereco);
+
+    // Atalho Enter quando o modal de seleção de endereço estiver aberto para confirmar a Reserva Sugerida
+    document.addEventListener('keydown', (e) => {
+      const modalSel = document.getElementById('modal-selecao-endereco');
+      if (e.key === 'Enter' && modalSel && !modalSel.classList.contains('hidden') && sugestaoConfirmarEnter) {
+        e.preventDefault();
+        sugestaoConfirmarEnter();
+      } else if (e.key === 'Escape' && modalSel && !modalSel.classList.contains('hidden')) {
+        fecharModalSelecaoEndereco();
+      }
+    });
 
     document.getElementById('btn-adicionar').addEventListener('click', () => {
       const codigoInput = document.getElementById('input-codigo').value.trim();
@@ -1543,37 +1750,39 @@
 
       if (qtdSolicitada <= 0) return showGlobalAlert(`A quantidade para o código ${codigoInput} deve ser maior que zero.`, "erro");
 
-      if (enderecoRessup === "XXXXXX") {
-        const prefixo = `${codigoInput}-`;
-        const opcoesEnderecos = [];
+      // Busca TODOS os endereços com saldo positivo para este produto
+      const prefixo = `${codigoInput}-`;
+      const opcoesEnderecos = [];
 
-        Object.keys(estoquePorEndereco).forEach(chave => {
-          if (chave.startsWith(prefixo)) {
-            const lotes = estoquePorEndereco[chave];
-            const saldoTotal = lotes.reduce((acc, l) => acc + l.saldoAtual, 0);
-            if (saldoTotal > 0) {
-              const enderecoReal = chave.substring(prefixo.length);
-              const codLoc = lotes.find(l => l.saldoAtual > 0)?.codigoLocalizador || "N/D";
-              opcoesEnderecos.push({
-                endereco: enderecoReal,
-                saldoTotal: saldoTotal,
-                codigoLocalizador: codLoc,
-                lotes: lotes
-              });
-            }
+      Object.keys(estoquePorEndereco).forEach(chave => {
+        if (chave.startsWith(prefixo)) {
+          const lotes = estoquePorEndereco[chave];
+          const saldoTotal = lotes.reduce((acc, l) => acc + l.saldoAtual, 0);
+          if (saldoTotal > 0) {
+            const enderecoReal = chave.substring(prefixo.length);
+            const codLoc = lotes.find(l => l.saldoAtual > 0)?.codigoLocalizador || "N/D";
+            opcoesEnderecos.push({
+              endereco: enderecoReal,
+              saldoTotal: saldoTotal,
+              codigoLocalizador: codLoc,
+              lotes: lotes
+            });
           }
-        });
-
-        if (opcoesEnderecos.length === 0) {
-          return showGlobalAlert(`Origem é XXXXXX, mas o código ${codigoInput} não possui saldo positivo em nenhum endereço da planilha de Saldo.`, "erro");
         }
+      });
 
-        opcoesEnderecos.sort((a, b) => b.saldoTotal - a.saldoTotal);
-        abrirModalSelecaoEndereco(codigoInput, descRessup, qtdSolicitada, romaneioRessup, opcoesEnderecos);
-        return;
+      if (opcoesEnderecos.length === 0) {
+        return showGlobalAlert(`O código ${codigoInput} não possui saldo positivo em nenhum endereço da planilha de Saldo de Estoque.`, "erro");
       }
 
-      processarAlocacaoEtiqueta(codigoInput, descRessup, enderecoRessup, qtdSolicitada, romaneioRessup);
+      // Ordena: Reserva Sugerida primeiro, depois maior saldo
+      opcoesEnderecos.sort((a, b) => {
+        if (a.endereco === enderecoRessup) return -1;
+        if (b.endereco === enderecoRessup) return 1;
+        return b.saldoTotal - a.saldoTotal;
+      });
+
+      abrirModalSelecaoEndereco(codigoInput, descRessup, qtdSolicitada, romaneioRessup, enderecoRessup, opcoesEnderecos);
     });
 
     document.getElementById('input-codigo').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('input-qtd').focus(); });
@@ -1618,9 +1827,118 @@
           <td class="p-3 truncate max-w-[200px]" title="${item.DESCRIÇÃO}">${item.DESCRIÇÃO}</td>
           <td class="p-3 font-bold text-blue-700">${item.QTD}</td>
           <td class="p-3 font-semibold">${item.ENDEREÇO}</td>
-          <td class="p-3 text-xs font-mono whitespace-pre">${item.LOTE}</td>
+          <td class="p-3 text-xs font-mono whitespace-nowrap">
+            <div class="inline-flex items-center gap-1.5">
+              <span class="font-bold text-gray-800">${item.LOTE}</span>
+              <button type="button" onclick="abrirModalEditarLote(${index})" title="Alterar Lote / Validade" class="text-blue-600 hover:text-blue-800 hover:bg-blue-100 p-1 rounded transition">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+          </td>
           <td class="p-3 text-xs">${item.VALIDADE}</td>
-          <td class="p-3 text-center"><button onclick="removerItemEtiqueta(${index})" class="text-red-500 hover:text-red-700 font-bold px-2">X</button></td></tr>`;
+          <td class="p-3 text-center"><button onclick="removerItemEtiqueta(${index})" title="Remover etiqueta" class="text-red-500 hover:text-red-700 font-bold px-2">X</button></td></tr>`;
+
+    let indexEditandoLote = null;
+
+    window.abrirModalEditarLote = (index) => {
+      const item = etiquetasExportar[index];
+      if (!item) return;
+      indexEditandoLote = index;
+
+      document.getElementById('edit-lote-prod').textContent = `${item.CÓDIGO} - ${item.DESCRIÇÃO}`;
+      document.getElementById('edit-lote-end').textContent = item.ENDEREÇO;
+      document.getElementById('edit-lote-qtd').textContent = `${item.QTD} un.`;
+      document.getElementById('edit-lote-atual').textContent = `${item.LOTE} (Val: ${item.VALIDADE})`;
+      document.getElementById('input-novo-lote').value = item.LOTE !== 'N/D' ? item.LOTE : '';
+      document.getElementById('input-nova-validade').value = item.VALIDADE !== 'N/D' ? item.VALIDADE : '';
+
+      const opcoesContainer = document.getElementById('edit-lote-opcoes');
+      opcoesContainer.innerHTML = '';
+
+      const lotesNoEnd = estoquePorEndereco[item._chaveSaldo] || [];
+      if (lotesNoEnd.length === 0) {
+        opcoesContainer.innerHTML = '<p class="text-xs text-gray-400 italic">Nenhum lote cadastrado neste endereço.</p>';
+      } else {
+        lotesNoEnd.forEach(l => {
+          const isMesmoLote = l.lote === item._lote && l.validade === item._validade;
+          const saldoDisponivelParaTroca = isMesmoLote ? (l.saldoAtual + item.QTD) : l.saldoAtual;
+          const suficiente = saldoDisponivelParaTroca >= item.QTD;
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.disabled = !suficiente;
+          btn.className = `w-full text-left border rounded p-2.5 text-xs flex justify-between items-center transition ${
+            isMesmoLote
+              ? 'bg-blue-50 border-blue-500 font-semibold'
+              : (suficiente ? 'bg-white hover:bg-blue-50 border-gray-300 cursor-pointer' : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed')
+          }`;
+
+          btn.innerHTML = `
+            <div>
+              <span class="font-mono font-bold text-gray-900">Lote: ${l.lote}</span>
+              <span class="text-gray-500 ml-2">Val: ${l.validade}</span>
+              ${isMesmoLote ? '<span class="ml-2 text-[10px] bg-blue-700 text-white px-1.5 py-0.5 rounded">Atual</span>' : ''}
+            </div>
+            <div class="text-right">
+              <span class="font-bold ${suficiente ? 'text-green-600' : 'text-red-500'}">${saldoDisponivelParaTroca} un.</span>
+            </div>
+          `;
+
+          if (suficiente && !isMesmoLote) {
+            btn.addEventListener('click', () => {
+              // Devolve saldo ao lote anterior e desconta do novo lote selecionado
+              const loteAnterior = lotesNoEnd.find(x => x.lote === item._lote && x.validade === item._validade);
+              if (loteAnterior) loteAnterior.saldoAtual += item.QTD;
+
+              l.saldoAtual -= item.QTD;
+              item.LOTE = l.lote;
+              item.VALIDADE = l.validade;
+              item._lote = l.lote;
+              item._validade = l.validade;
+              if (l.codigoLocalizador) item["CÓD. LOCALIZADOR"] = l.codigoLocalizador;
+
+              fecharModalEditarLote();
+              atualizarTabelaEtiquetas();
+              showGlobalAlert(`Lote atualizado para ${l.lote} (Val: ${l.validade})!`, "sucesso");
+            });
+          }
+          opcoesContainer.appendChild(btn);
+        });
+      }
+
+      const modal = document.getElementById('modal-editar-lote');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.fecharModalEditarLote = () => {
+      const modal = document.getElementById('modal-editar-lote');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      indexEditandoLote = null;
+    };
+
+    document.getElementById('btn-salvar-edicao-lote').addEventListener('click', () => {
+      if (indexEditandoLote === null) return;
+      const item = etiquetasExportar[indexEditandoLote];
+      const novoLote = document.getElementById('input-novo-lote').value.trim().toUpperCase();
+      const novaVal = document.getElementById('input-nova-validade').value.trim();
+
+      if (!novoLote) {
+        return showGlobalAlert("Informe o número do lote ou selecione uma opção acima.", "erro");
+      }
+
+      item.LOTE = novoLote;
+      item._lote = novoLote;
+      if (novaVal) {
+        item.VALIDADE = novaVal;
+        item._validade = novaVal;
+      }
+
+      fecharModalEditarLote();
+      atualizarTabelaEtiquetas();
+      showGlobalAlert(`Lote alterado manualmente para ${novoLote}!`, "sucesso");
+    });
       });
       atualizarDashboardEtiquetas();
     };
@@ -1952,6 +2270,7 @@
 
     let ultimaBaseRessuprimento = [];
     let ultimaBaseSaldo = [];
+    let ultimaBaseEstoqueAtual = [];
     let registrosAtendimentoConsolidados = [];
     let resumoGeralPorSetor = [];
     let resumoReservaPorSetor = [];
@@ -2070,11 +2389,34 @@
       };
     }
 
-    function processarAbaAtendimento(normRes, normSaldo) {
+    function processarAbaAtendimento(normRes, normSaldo, normEstoqueAtual = []) {
       ultimaBaseRessuprimento = normRes;
       ultimaBaseSaldo = normSaldo;
+      ultimaBaseEstoqueAtual = Array.isArray(normEstoqueAtual) ? normEstoqueAtual : [];
 
-      // 1. Mapear Saldo de Estoque por Produto, separando exclusivamente os endereços de Picking de Separação
+      // 1A. Indexar planilha auxiliar ESTOQUE ATUAL (Fallback para produtos não encontrados no Saldo de Estoque)
+      const pickingEstoqueAtualPorProd = new Map();
+      ultimaBaseEstoqueAtual.forEach(row => {
+        const prodId = String(row['PRODUTO'] || '').trim();
+        if (!prodId) return;
+
+        const pkRaw = String(row['PICKING'] || '').trim().toUpperCase();
+        const saldoEst = parseNum(row['SALDO']);
+
+        if (pkRaw && pkRaw !== '-' && !pkRaw.includes('XXX')) {
+          if (!pickingEstoqueAtualPorProd.has(prodId)) {
+            pickingEstoqueAtualPorProd.set(prodId, {
+              pickings: new Set(),
+              saldoTotal: 0
+            });
+          }
+          const entry = pickingEstoqueAtualPorProd.get(prodId);
+          entry.pickings.add(pkRaw);
+          entry.saldoTotal += saldoEst;
+        }
+      });
+
+      // 1B. Mapear Saldo de Estoque por Produto, separando exclusivamente os endereços de Picking de Separação
       const infoProdSaldo = new Map();
 
       normSaldo.forEach(row => {
@@ -2170,7 +2512,9 @@
         acc.qtdPendente += qtdPendente;
       });
 
-      // 3. Cruzar bases pelo Código do Produto e classificar pelo Endereço de Picking de Separação
+      // 3. Cruzar bases pelo Código do Produto:
+      //    1º Busca no Saldo de Estoque (Tipo Localizador = Separação)
+      //    2º Se não achar no Saldo de Estoque, busca na planilha Estoque Atual (coluna Picking)
       registrosAtendimentoConsolidados = [];
       mapaConsolidado.forEach(item => {
         const prodInfo = infoProdSaldo.get(item.produto);
@@ -2180,9 +2524,27 @@
           : '';
 
         const pkInfo = pickingPrincipalPorProd.get(item.produto);
-        const enderecoPicking = pkInfo ? pkInfo.principal.endereco : '';
-        const todosPickingsStr = pkInfo ? pkInfo.todos.map(p => p.endereco).join(', ') : '-';
-        const saldoPicking = pkInfo ? pkInfo.principal.saldoTotal : (prodInfo ? prodInfo.saldoTotalGeral : 0);
+        const estAtualInfo = pickingEstoqueAtualPorProd.get(item.produto);
+
+        let enderecoPicking = '';
+        let todosPickingsStr = '-';
+        let saldoPicking = 0;
+        let fontePicking = 'Não Encontrado';
+
+        if (pkInfo) {
+          enderecoPicking = pkInfo.principal.endereco;
+          todosPickingsStr = pkInfo.todos.map(p => p.endereco).join(', ');
+          saldoPicking = pkInfo.principal.saldoTotal;
+          fontePicking = 'Saldo Estoque';
+        } else if (estAtualInfo && estAtualInfo.pickings.size > 0) {
+          const listaEst = Array.from(estAtualInfo.pickings);
+          enderecoPicking = listaEst[0];
+          todosPickingsStr = listaEst.join(', ');
+          saldoPicking = estAtualInfo.saldoTotal;
+          fontePicking = 'Estoque Atual';
+        } else if (prodInfo) {
+          saldoPicking = prodInfo.saldoTotalGeral;
+        }
 
         const classif = classificarSetorPorPicking(enderecoPicking, item.enderecoOrigem, tipoLocOrigem);
         const percIndividual = item.qtdSolicitada > 0 ? (item.qtdAtendida / item.qtdSolicitada) * 100 : 0;
@@ -2193,6 +2555,7 @@
           enderecoOrigem: item.enderecoOrigem,
           enderecoPicking: enderecoPicking || '-',
           todosPickings: todosPickingsStr,
+          fontePicking,
           prefixo: classif.prefixo,
           setor: classif.setor,
           isPickingReserva: classif.isPickingReserva,
@@ -2527,13 +2890,14 @@
                r.enderecoOrigem.toUpperCase().includes(termo) ||
                r.enderecoPicking.toUpperCase().includes(termo) ||
                r.todosPickings.toUpperCase().includes(termo) ||
+               r.fontePicking.toUpperCase().includes(termo) ||
                r.setor.toUpperCase().includes(termo);
       });
 
       document.getElementById('modal-atend-contagem').textContent = `Exibindo ${lista.length} de ${modalDetalheState.registrosFiltrados.length} registros`;
 
       if (lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="p-6 text-center text-gray-500 italic">Nenhum registro encontrado para este filtro.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" class="p-6 text-center text-gray-500 italic">Nenhum registro encontrado para este filtro.</td></tr>';
         return;
       }
 
@@ -2542,15 +2906,23 @@
           ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">Picking Reserva</span>'
           : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700">Geral</span>';
 
+        let fonteBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Sem Picking</span>';
+        if (r.fontePicking === 'Saldo Estoque') {
+          fonteBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Saldo Estoque</span>';
+        } else if (r.fontePicking === 'Estoque Atual') {
+          fonteBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">Estoque Atual</span>';
+        }
+
         const setorClass = r.setor === 'Outros' ? 'text-amber-700 font-bold' : 'text-blue-950 font-semibold';
         const saldoClass = r.saldoEstoque < 0 ? 'text-red-600 font-black' : 'text-indigo-700 font-semibold';
         const multiPickingTitle = r.todosPickings !== r.enderecoPicking ? `Todos os pickings: ${r.todosPickings}` : r.enderecoPicking;
 
         return `<tr class="hover:bg-blue-50">
           <td class="p-2.5 font-bold text-gray-900">${r.produto}</td>
-          <td class="p-2.5 text-gray-700 max-w-[210px] truncate" title="${r.descricao}">${r.descricao}</td>
+          <td class="p-2.5 text-gray-700 max-w-[200px] truncate" title="${r.descricao}">${r.descricao}</td>
           <td class="p-2.5 font-mono text-gray-600">${r.enderecoOrigem}</td>
           <td class="p-2.5 font-mono font-bold text-blue-900" title="${multiPickingTitle}">${r.enderecoPicking}</td>
+          <td class="p-2.5 text-center">${fonteBadge}</td>
           <td class="p-2.5 ${setorClass}">${r.setor}</td>
           <td class="p-2.5 text-center">${origemBadge}</td>
           <td class="p-2.5 text-right font-semibold">${r.qtdSolicitada.toLocaleString('pt-BR')}</td>
@@ -2574,7 +2946,7 @@
       atualizarBadgeRegrasCustom();
 
       // Recalcula automaticamente todos os indicadores
-      processarAbaAtendimento(ultimaBaseRessuprimento, ultimaBaseSaldo);
+      processarAbaAtendimento(ultimaBaseRessuprimento, ultimaBaseSaldo, ultimaBaseEstoqueAtual);
       // Reabre o modal atualizado
       abrirDetalheSetorAtendimento(modalDetalheState.escopo, modalDetalheState.setor);
       showGlobalAlert(`Prefixo "${prefixo}" mapeado para "${setorDestino}" e indicadores recalculados!`, "sucesso");
@@ -2626,7 +2998,7 @@
       renderizarListaRegrasCustom();
 
       if (ultimaBaseRessuprimento.length > 0) {
-        processarAbaAtendimento(ultimaBaseRessuprimento, ultimaBaseSaldo);
+        processarAbaAtendimento(ultimaBaseRessuprimento, ultimaBaseSaldo, ultimaBaseEstoqueAtual);
       }
       showGlobalAlert(`Regra "${prefixo} → ${setor}" adicionada!`, "sucesso");
     };
@@ -2638,7 +3010,7 @@
       renderizarListaRegrasCustom();
 
       if (ultimaBaseRessuprimento.length > 0) {
-        processarAbaAtendimento(ultimaBaseRessuprimento, ultimaBaseSaldo);
+        processarAbaAtendimento(ultimaBaseRessuprimento, ultimaBaseSaldo, ultimaBaseEstoqueAtual);
       }
     };
 
@@ -2651,6 +3023,7 @@
         "Endereço Origem": r.enderecoOrigem,
         "Picking Separação": r.enderecoPicking,
         "Todos os Pickings": r.todosPickings,
+        "Base Picking": r.fontePicking,
         "Setor": r.setor,
         "Tipo Origem": r.isPickingReserva ? 'Picking Reserva' : 'Geral',
         "Qtd. Total": r.qtdSolicitada,
@@ -2702,6 +3075,7 @@
         "Endereço Origem": r.enderecoOrigem,
         "Picking Separação": r.enderecoPicking,
         "Todos os Pickings": r.todosPickings,
+        "Base Picking": r.fontePicking,
         "Setor Classificado": r.setor,
         "Tipo Origem": r.isPickingReserva ? "Picking Reserva" : "Geral",
         "Qtd. Total": r.qtdSolicitada,
