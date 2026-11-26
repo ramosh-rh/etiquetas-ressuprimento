@@ -35,9 +35,12 @@
       </div>
 
       <!-- Navegação por Abas -->
-      <nav class="flex bg-blue-950 p-1 rounded-lg border border-blue-700">
+      <nav class="flex flex-wrap bg-blue-950 p-1 rounded-lg border border-blue-700 gap-1">
         <button id="tab-btn-mapa" onclick="switchTab('mapa')" class="px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow">
           <i class="fas fa-chart-pie"></i> Mapa de Atendimento
+        </button>
+        <button id="tab-btn-atendimento" onclick="switchTab('atendimento')" class="px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 text-blue-200 hover:text-white">
+          <i class="fas fa-bullseye"></i> Atendimento
         </button>
         <button id="tab-btn-etiquetas" onclick="switchTab('etiquetas')" class="px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 text-blue-200 hover:text-white">
           <i class="fas fa-tags"></i> Gerador de Etiquetas
@@ -296,6 +299,350 @@
   </main>
 
   <!-- ===================================================================== -->
+  <!-- ABA 3: ATENDIMENTO (BLOCO 1: ATENDIMENTO GERAL | BLOCO 2: PICKING RESERVA) -->
+  <!-- ===================================================================== -->
+  <main id="view-atendimento" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 hidden">
+    
+    <!-- Cabeçalho da Aba Atendimento -->
+    <div class="bg-white rounded-lg shadow p-5 mb-6 border-l-4 border-blue-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <h2 class="text-xl font-bold text-blue-950">Painel de Atendimento & Picking Reserva</h2>
+          <span class="text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800">Base Compartilhada (Importação Única)</span>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Visão consolidada do Mapa de Ressuprimento completo e apuração exclusiva do Picking Reserva por setor</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button id="btn-gerenciar-mapeamento" onclick="abrirModalMapeamento()" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+          <i class="fas fa-sliders-h"></i> Mapeamento de Prefixos (<span id="badge-regras-custom">0</span>)
+        </button>
+        <button id="btn-exportar-atendimento-excel" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+          <i class="fas fa-file-excel"></i> Exportar Relatório (.xlsx)
+        </button>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- BLOCO 1: ATENDIMENTO GERAL (MAPA DE RESSUPRIMENTO COMPLETO)         -->
+    <!-- =================================================================== -->
+    <section class="mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-blue-800">
+        <div class="flex items-center gap-2">
+          <span class="bg-blue-900 text-white text-xs font-black px-2.5 py-1 rounded">BLOCO 1</span>
+          <h3 class="text-base font-bold text-blue-950 uppercase tracking-wide">Atendimento Geral (Mapa de Ressuprimento Completo)</h3>
+        </div>
+        <span class="text-xs text-gray-500 font-medium">Clique em qualquer card para abrir a rastreabilidade detalhada</span>
+      </div>
+
+      <!-- KPIs Consolidados do Mapa Completo (4 Cards Clicáveis) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+        <!-- % Atendimento Total do Mapa -->
+        <div onclick="abrirDetalheSetorAtendimento('GERAL', 'TODOS')" class="bg-white rounded-lg shadow p-4 border-t-4 border-blue-700 cursor-pointer hover:bg-blue-50/60 hover:shadow-md transition flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <p class="text-xs font-bold text-gray-500 uppercase">% Atendimento Total</p>
+            <i class="fas fa-percentage text-blue-200 text-xl"></i>
+          </div>
+          <p class="text-3xl font-black text-blue-700 my-1" id="b1-perc-total">0,00%</p>
+          <p class="text-[11px] text-gray-500" id="b1-perc-sub">Mapa de ressuprimento completo</p>
+        </div>
+
+        <!-- Quantidade Total Solicitada -->
+        <div onclick="abrirDetalheSetorAtendimento('GERAL', 'TODOS')" class="bg-white rounded-lg shadow p-4 border-t-4 border-slate-600 cursor-pointer hover:bg-slate-50 hover:shadow-md transition flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <p class="text-xs font-bold text-gray-500 uppercase">Qtd. Total Solicitada</p>
+            <i class="fas fa-clipboard-list text-slate-300 text-xl"></i>
+          </div>
+          <p class="text-3xl font-black text-slate-800 my-1" id="b1-qtd-solicitada">0</p>
+          <p class="text-[11px] text-gray-500" id="b1-qtd-solicitada-sub">0 produtos | 0 endereços</p>
+        </div>
+
+        <!-- Quantidade Já Atendida -->
+        <div onclick="abrirDetalheSetorAtendimento('GERAL', 'TODOS')" class="bg-white rounded-lg shadow p-4 border-t-4 border-green-600 cursor-pointer hover:bg-green-50/60 hover:shadow-md transition flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <p class="text-xs font-bold text-green-700 uppercase">Qtd. Já Atendida</p>
+            <i class="fas fa-check-circle text-green-200 text-xl"></i>
+          </div>
+          <p class="text-3xl font-black text-green-600 my-1" id="b1-qtd-atendida">0</p>
+          <p class="text-[11px] text-gray-500">Unidades efetivamente separadas</p>
+        </div>
+
+        <!-- Quantidade Pendente de Atendimento -->
+        <div onclick="abrirDetalheSetorAtendimento('GERAL', 'PENDENTES')" class="bg-white rounded-lg shadow p-4 border-t-4 border-red-600 cursor-pointer hover:bg-red-50/60 hover:shadow-md transition flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <p class="text-xs font-bold text-red-700 uppercase">Qtd. Pendente</p>
+            <i class="fas fa-clock text-red-200 text-xl"></i>
+          </div>
+          <p class="text-3xl font-black text-red-600 my-1" id="b1-qtd-pendente">0</p>
+          <p class="text-[11px] text-gray-500">Clique para auditar pendências</p>
+        </div>
+      </div>
+
+      <!-- Cards por Setor/Categoria do Mapa Geral -->
+      <div id="b1-cards-setores" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <!-- Preenchido via JS -->
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- BLOCO 2: ATENDIMENTO DO PICKING RESERVA (EXCLUSIVO)                 -->
+    <!-- =================================================================== -->
+    <section class="mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2 border-b-2 border-red-700">
+        <div class="flex items-center gap-2">
+          <span class="bg-red-700 text-white text-xs font-black px-2.5 py-1 rounded">BLOCO 2</span>
+          <h3 class="text-base font-bold text-blue-950 uppercase tracking-wide">Atendimento do Picking Reserva</h3>
+        </div>
+        <span class="text-xs text-gray-500 font-medium">Apuração exclusiva dos endereços de Picking Reserva por setor</span>
+      </div>
+
+      <!-- Card Consolidado do Picking Reserva -->
+      <div onclick="abrirDetalheSetorAtendimento('RESERVA', 'TODOS')" class="bg-white rounded-lg shadow p-5 mb-4 border-l-4 border-red-700 cursor-pointer hover:bg-blue-50/40 hover:shadow-md transition">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-lg bg-blue-900 text-white flex items-center justify-center shrink-0">
+              <i class="fas fa-archive text-xl"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-base font-extrabold text-blue-950 uppercase">Consolidado Geral – Picking Reserva</h4>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-800">Clique para detalhar</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5" id="b2-consolidado-meta">0 produtos | 0 endereços de picking reserva identificados</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-6 items-center">
+            <div>
+              <span class="text-[11px] font-bold text-gray-400 uppercase block">Total Picking Reserva</span>
+              <span class="text-xl font-black text-slate-800" id="b2-total-solicitada">0</span>
+            </div>
+            <div>
+              <span class="text-[11px] font-bold text-gray-400 uppercase block">Já Atendida</span>
+              <span class="text-xl font-black text-green-600" id="b2-total-atendida">0</span>
+            </div>
+            <div>
+              <span class="text-[11px] font-bold text-gray-400 uppercase block">Pendente</span>
+              <span class="text-xl font-black text-red-600" id="b2-total-pendente">0</span>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-center">
+              <span class="text-[10px] font-bold text-blue-800 uppercase block">% Atendimento</span>
+              <span class="text-2xl font-black text-blue-700" id="b2-perc-total">0,00%</span>
+            </div>
+          </div>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4 overflow-hidden">
+          <div id="b2-barra-progresso" class="bg-blue-700 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- 6 Cards Individuais dos Setores do Picking Reserva -->
+      <div id="b2-cards-setores" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <!-- Preenchido via JS: Perfumaria e Volumosos, Medicamentos, Dermocosméticos, VH, VM, Outros -->
+      </div>
+    </section>
+
+    <!-- Gráficos Comparativos (Bloco 1 vs Bloco 2) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="bg-white rounded-lg shadow p-4 h-80 flex flex-col">
+        <h3 class="text-sm font-bold text-blue-950 mb-2">Atendimento Geral vs. Picking Reserva por Setor (%)</h3>
+        <div class="relative w-full flex-1">
+          <canvas id="chartAtendComparativoPerc"></canvas>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-4 h-80 flex flex-col">
+        <h3 class="text-sm font-bold text-blue-950 mb-2">Picking Reserva: Volume Atendido vs. Pendente por Setor (Un.)</h3>
+        <div class="relative w-full flex-1">
+          <canvas id="chartAtendReservaVol"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 4: DETALHAMENTO DE SETOR / CARD CLICÁVEL (ABA ATENDIMENTO)      -->
+  <!-- ===================================================================== -->
+  <div id="modal-atendimento-detalhe" class="fixed inset-0 bg-black bg-opacity-60 hidden justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-6xl flex flex-col max-h-[92vh]">
+      <!-- Cabeçalho do Modal -->
+      <div class="px-6 py-4 border-b bg-blue-900 text-white rounded-t-lg flex justify-between items-center">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="modal-atend-badge-escopo" class="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-red-600 text-white">PICKING RESERVA</span>
+            <h3 class="text-lg font-bold" id="modal-atend-titulo">Detalhamento do Setor</h3>
+          </div>
+          <p class="text-xs text-blue-200 mt-0.5" id="modal-atend-subtitulo">Rastreabilidade completa de produtos, endereços e quantidades</p>
+        </div>
+        <button onclick="fecharModalAtendimentoDetalhe()" class="text-blue-200 hover:text-white text-2xl font-bold leading-none">&times;</button>
+      </div>
+
+      <!-- Resumo Numérico do Setor Selecionado -->
+      <div class="grid grid-cols-2 sm:grid-cols-6 gap-3 p-4 bg-gray-50 border-b text-center">
+        <div class="bg-white p-2.5 rounded border">
+          <span class="text-[10px] font-bold text-gray-400 uppercase block">Produtos</span>
+          <span class="text-lg font-black text-gray-800" id="det-card-prods">0</span>
+        </div>
+        <div class="bg-white p-2.5 rounded border">
+          <span class="text-[10px] font-bold text-gray-400 uppercase block">Endereços</span>
+          <span class="text-lg font-black text-blue-800" id="det-card-ends">0</span>
+        </div>
+        <div class="bg-white p-2.5 rounded border">
+          <span class="text-[10px] font-bold text-gray-400 uppercase block">Qtd. Total</span>
+          <span class="text-lg font-black text-slate-800" id="det-card-total">0</span>
+        </div>
+        <div class="bg-white p-2.5 rounded border">
+          <span class="text-[10px] font-bold text-gray-400 uppercase block">Atendida</span>
+          <span class="text-lg font-black text-green-600" id="det-card-atendida">0</span>
+        </div>
+        <div class="bg-white p-2.5 rounded border">
+          <span class="text-[10px] font-bold text-gray-400 uppercase block">Pendente</span>
+          <span class="text-lg font-black text-red-600" id="det-card-pendente">0</span>
+        </div>
+        <div class="bg-blue-50 p-2.5 rounded border border-blue-200">
+          <span class="text-[10px] font-bold text-blue-800 uppercase block">% Atendimento</span>
+          <span class="text-lg font-black text-blue-700" id="det-card-perc">0,00%</span>
+        </div>
+      </div>
+
+      <!-- Painel Especial para "Outros": Reclassificação Rápida de Prefixos Não Mapeados -->
+      <div id="painel-reclassificar-outros" class="hidden bg-amber-50 border-b border-amber-200 px-5 py-3">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div>
+            <h4 class="text-xs font-bold text-amber-900 uppercase"><i class="fas fa-tools mr-1"></i> Mapeamento Rápido de Endereços "Outros"</h4>
+            <p class="text-[11px] text-amber-800">Selecione um prefixo encontrado em "Outros" e vincule ao setor correto para recalcular automaticamente todos os indicadores:</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="select-prefixo-outros" class="border border-amber-300 rounded px-2.5 py-1.5 text-xs font-bold bg-white text-gray-800"></select>
+            <span class="text-xs font-bold text-amber-900">→</span>
+            <select id="select-destino-setor" class="border border-amber-300 rounded px-2.5 py-1.5 text-xs font-bold bg-white text-gray-800">
+              <option value="Fraldas">Fraldas</option>
+              <option value="Absorventes / Hig. Íntima">Absorventes / Hig. Íntima</option>
+              <option value="Grandes Volumes">Grandes Volumes</option>
+              <option value="Perfumaria">Perfumaria</option>
+              <option value="Volumosos / Latas (Mez.)">Volumosos / Latas (Mez.)</option>
+              <option value="Dermocosméticos">Dermocosméticos</option>
+              <option value="Medicamentos">Medicamentos</option>
+              <option value="Controlados / Antibióticos">Controlados / Antibióticos</option>
+              <option value="Alimentos / Conveniência">Alimentos / Conveniência</option>
+              <option value="Termolábeis">Termolábeis</option>
+              <option value="VH">VH</option>
+              <option value="VM">VM</option>
+            </select>
+            <button onclick="salvarMapeamentoRapido()" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-3.5 py-1.5 rounded shadow transition">
+              <i class="fas fa-check mr-1"></i> Aplicar & Recalcular
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Busca e Exportação do Modal -->
+      <div class="px-5 py-3 bg-white border-b flex flex-col sm:flex-row justify-between items-center gap-3">
+        <input type="text" id="modal-atend-busca" placeholder="Filtrar por código, descrição, endereço ou romaneio..." class="border rounded-lg px-3 py-1.5 text-xs w-full sm:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <span id="modal-atend-contagem" class="text-xs text-gray-500 font-medium">0 registros</span>
+          <button id="btn-exportar-modal-atend" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-3.5 py-1.5 rounded shadow flex items-center gap-1.5">
+            <i class="fas fa-file-excel"></i> Exportar Visão (.xlsx)
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabela de Registros que Compõem o Indicador -->
+      <div class="overflow-y-auto flex-1">
+        <table class="w-full text-xs text-left border-collapse">
+          <thead class="bg-gray-100 text-gray-700 uppercase sticky top-0 shadow-sm z-10">
+            <tr>
+              <th class="p-3 border-b">Produto</th>
+              <th class="p-3 border-b">Descrição</th>
+              <th class="p-3 border-b">End. Origem</th>
+              <th class="p-3 border-b">Picking Separação</th>
+              <th class="p-3 border-b">Setor</th>
+              <th class="p-3 border-b text-center">Tipo Origem</th>
+              <th class="p-3 border-b text-right">Qtd. Total</th>
+              <th class="p-3 border-b text-right">Atendida</th>
+              <th class="p-3 border-b text-right">Pendente</th>
+              <th class="p-3 border-b text-right">% Atend.</th>
+              <th class="p-3 border-b text-right">Saldo Picking</th>
+            </tr>
+          </thead>
+          <tbody id="modal-atend-tbody" class="divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+
+      <div class="px-6 py-3 border-t bg-gray-50 text-right rounded-b-lg">
+        <button onclick="fecharModalAtendimentoDetalhe()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1.5 px-5 rounded text-xs">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 5: GERENCIADOR DE REGRAS DE MAPEAMENTO DE PREFIXOS              -->
+  <!-- ===================================================================== -->
+  <div id="modal-mapeamento-prefixos" class="fixed inset-0 bg-black bg-opacity-60 hidden justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[85vh]">
+      <div class="px-5 py-4 border-b bg-blue-900 text-white rounded-t-lg flex justify-between items-center">
+        <div>
+          <h3 class="text-base font-bold"><i class="fas fa-map-signs mr-2"></i>Regras de Classificação de Endereços</h3>
+          <p class="text-xs text-blue-200">Regras padrão e mapeamentos personalizados salvos no navegador</p>
+        </div>
+        <button onclick="fecharModalMapeamento()" class="text-blue-200 hover:text-white text-2xl font-bold leading-none">&times;</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
+          <p class="font-bold text-blue-950 uppercase mb-1.5">Regras Padrão (Cruzamento pelo Picking de Separação):</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-gray-700">
+            <div><span class="font-bold text-blue-900">Fraldas:</span> V24</div>
+            <div><span class="font-bold text-blue-900">Absorventes / Hig. Íntima:</span> V23</div>
+            <div><span class="font-bold text-blue-900">Grandes Volumes:</span> V25</div>
+            <div><span class="font-bold text-blue-900">Perfumaria:</span> V41</div>
+            <div><span class="font-bold text-blue-900">Volumosos / Latas (Mez.):</span> VY</div>
+            <div><span class="font-bold text-blue-900">Dermocosméticos:</span> VW</div>
+            <div><span class="font-bold text-blue-900">Medicamentos:</span> V43</div>
+            <div><span class="font-bold text-blue-900">Controlados / Antibióticos:</span> VX</div>
+            <div><span class="font-bold text-blue-900">Alimentos / Conveniência:</span> VR</div>
+            <div><span class="font-bold text-blue-900">Termolábeis:</span> VG</div>
+            <div><span class="font-bold text-blue-900">VH:</span> VH</div>
+            <div><span class="font-bold text-blue-900">VM:</span> VM</div>
+            <div><span class="font-bold text-red-700">Outros:</span> Sem picking ou prefixo não mapeado</div>
+          </div>
+        </div>
+
+        <div class="border rounded-lg p-3 bg-gray-50">
+          <p class="text-xs font-bold text-gray-700 uppercase mb-2">Adicionar Novo Prefixo Personalizado:</p>
+          <div class="flex flex-wrap gap-2">
+            <input type="text" id="novo-prefixo-input" placeholder="Ex: V15 ou VJ01" class="border rounded px-3 py-1.5 text-xs uppercase font-bold flex-1 min-w-[140px]">
+            <select id="novo-prefixo-setor" class="border rounded px-3 py-1.5 text-xs font-bold bg-white">
+              <option value="Fraldas">Fraldas</option>
+              <option value="Absorventes / Hig. Íntima">Absorventes / Hig. Íntima</option>
+              <option value="Grandes Volumes">Grandes Volumes</option>
+              <option value="Perfumaria">Perfumaria</option>
+              <option value="Volumosos / Latas (Mez.)">Volumosos / Latas (Mez.)</option>
+              <option value="Dermocosméticos">Dermocosméticos</option>
+              <option value="Medicamentos">Medicamentos</option>
+              <option value="Controlados / Antibióticos">Controlados / Antibióticos</option>
+              <option value="Alimentos / Conveniência">Alimentos / Conveniência</option>
+              <option value="Termolábeis">Termolábeis</option>
+              <option value="VH">VH</option>
+              <option value="VM">VM</option>
+            </select>
+            <button onclick="adicionarPrefixoManual()" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold px-4 py-1.5 rounded">Adicionar</button>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs font-bold text-gray-700 uppercase mb-2">Mapeamentos Personalizados Ativos:</p>
+          <div id="lista-regras-custom" class="divide-y border rounded-lg text-xs">
+            <p class="p-3 text-gray-400 italic">Nenhuma regra personalizada cadastrada.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3 border-t bg-gray-50 text-right rounded-b-lg">
+        <button onclick="fecharModalMapeamento()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1.5 px-4 rounded text-xs">Fechar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL 1: DETALHES DO MAPA DE ATENDIMENTO                              -->
   <!-- ===================================================================== -->
   <div id="modal-wms-backdrop" class="modal-wms fixed inset-0 z-40 items-center justify-center p-4">
@@ -505,22 +852,23 @@
     // CONTROLE DE ABAS
     // -------------------------------------------------------------------------
     window.switchTab = (tabName) => {
-      const viewMapa = document.getElementById('view-mapa');
-      const viewEtiquetas = document.getElementById('view-etiquetas');
-      const btnMapa = document.getElementById('tab-btn-mapa');
-      const btnEtiquetas = document.getElementById('tab-btn-etiquetas');
+      const tabs = ['mapa', 'atendimento', 'etiquetas'];
+      const activeClass = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow";
+      const inactiveClass = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 text-blue-200 hover:text-white";
 
-      if (tabName === 'mapa') {
-        viewMapa.classList.remove('hidden');
-        viewEtiquetas.classList.add('hidden');
-        btnMapa.className = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow";
-        btnEtiquetas.className = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 text-blue-200 hover:text-white";
-      } else {
-        viewMapa.classList.add('hidden');
-        viewEtiquetas.classList.remove('hidden');
-        btnEtiquetas.className = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow";
-        btnMapa.className = "px-4 py-2 rounded-md text-sm font-bold transition flex items-center gap-2 text-blue-200 hover:text-white";
-      }
+      tabs.forEach(t => {
+        const viewEl = document.getElementById(`view-${t}`);
+        const btnEl = document.getElementById(`tab-btn-${t}`);
+        if (viewEl && btnEl) {
+          if (t === tabName) {
+            viewEl.classList.remove('hidden');
+            btnEl.className = activeClass;
+          } else {
+            viewEl.classList.add('hidden');
+            btnEl.className = inactiveClass;
+          }
+        }
+      });
     };
 
     // -------------------------------------------------------------------------
@@ -659,7 +1007,10 @@
       // 1. Alimenta o Mapa de Atendimento (Aba 1)
       processarMapaAtendimento(dataRes, dataSaldo);
 
-      // 2. Alimenta o Controle de Lotes para Etiquetas (Aba 2)
+      // 2. Alimenta a Aba Atendimento (Consolidação de Setores & Percentuais)
+      processarAbaAtendimento(dataRes, dataSaldo);
+
+      // 3. Alimenta o Controle de Lotes para Etiquetas (Aba 2)
       prepararEstoqueEtiquetas(dataSaldo);
 
       document.getElementById('badge-ressup').textContent = `${dataRes.length} linhas`;
@@ -1587,7 +1938,783 @@
         statusMsg.classList.add('text-red-600');
       }
     });
+
+    // =========================================================================
+    // MÓDULO 3: ABA ATENDIMENTO (BLOCO 1: GERAL | BLOCO 2: PICKING RESERVA)
+    // =========================================================================
+    const STORAGE_KEY_REGRAS_SETOR = "wms_regras_prefixo_atendimento_v2";
+    let regrasCustomizadasPrefixo = {};
+    try {
+      regrasCustomizadasPrefixo = JSON.parse(localStorage.getItem(STORAGE_KEY_REGRAS_SETOR) || "{}");
+    } catch (e) {
+      regrasCustomizadasPrefixo = {};
+    }
+
+    let ultimaBaseRessuprimento = [];
+    let ultimaBaseSaldo = [];
+    let registrosAtendimentoConsolidados = [];
+    let resumoGeralPorSetor = [];
+    let resumoReservaPorSetor = [];
+    let chartAtendComparativoPercInstance = null;
+    let chartAtendReservaVolInstance = null;
+
+    // Estado atual do modal de detalhe clicável
+    let modalDetalheState = {
+      escopo: 'GERAL', // 'GERAL' ou 'RESERVA'
+      setor: 'TODOS',
+      registrosFiltrados: []
+    };
+
+    const SETORES_ATENDIMENTO = [
+      { nome: 'Fraldas', regra: 'Picking V24' },
+      { nome: 'Absorventes / Hig. Íntima', regra: 'Picking V23' },
+      { nome: 'Grandes Volumes', regra: 'Picking V25' },
+      { nome: 'Perfumaria', regra: 'Picking V41' },
+      { nome: 'Volumosos / Latas (Mez.)', regra: 'Picking VY' },
+      { nome: 'Dermocosméticos', regra: 'Picking VW' },
+      { nome: 'Medicamentos', regra: 'Picking V43' },
+      { nome: 'Controlados / Antibióticos', regra: 'Picking VX' },
+      { nome: 'Alimentos / Conveniência', regra: 'Picking VR' },
+      { nome: 'Termolábeis', regra: 'Picking VG' },
+      { nome: 'VH', regra: 'Picking VH' },
+      { nome: 'VM', regra: 'Picking VM' },
+      { nome: 'Outros', regra: 'Sem picking / Não mapeado' }
+    ];
+
+    function atualizarBadgeRegrasCustom() {
+      const qtd = Object.keys(regrasCustomizadasPrefixo).length;
+      const badge = document.getElementById('badge-regras-custom');
+      if (badge) badge.textContent = qtd;
+    }
+    atualizarBadgeRegrasCustom();
+
+    function extrairPrefixoEndereco(enderecoRaw) {
+      const end = String(enderecoRaw || '').trim().toUpperCase();
+      if (!end || end === '-' || end === 'XXXXXX' || end === 'XXX') return '';
+      return end.split('-')[0].trim();
+    }
+
+    function classificarSetorPorPicking(enderecoPickingRaw, enderecoOrigemRaw, tipoLocalizadorOrigem = '') {
+      const endPicking = String(enderecoPickingRaw || '').trim().toUpperCase();
+      const endOrigem = String(enderecoOrigemRaw || '').trim().toUpperCase();
+      const ehPickingRes = isPickingReserva(endOrigem, tipoLocalizadorOrigem);
+
+      if (!endPicking || endPicking === 'XXXXXX' || endPicking === 'XXX' || endPicking === '-') {
+        return {
+          setor: 'Outros',
+          prefixo: endPicking || 'SEM PICKING',
+          isPickingReserva: ehPickingRes,
+          classificado: false,
+          motivo: !endPicking || endPicking === '-' ? 'Produto sem endereço de picking de separação' : `Picking ${endPicking}`
+        };
+      }
+
+      const prefixo = extrairPrefixoEndereco(endPicking);
+
+      // 1. Verifica primeiro se existe regra personalizada cadastrada pelo usuário
+      if (regrasCustomizadasPrefixo[prefixo]) {
+        return {
+          setor: regrasCustomizadasPrefixo[prefixo],
+          prefixo,
+          isPickingReserva: ehPickingRes,
+          classificado: true,
+          motivo: 'Mapeado (Personalizado)'
+        };
+      }
+
+      // 2. Regras padrão baseadas no Endereço de Picking de Separação:
+      if (prefixo === 'V24') {
+        return { setor: 'Fraldas', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo === 'V23') {
+        return { setor: 'Absorventes / Hig. Íntima', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo === 'V25') {
+        return { setor: 'Grandes Volumes', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo === 'V41') {
+        return { setor: 'Perfumaria', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo.startsWith('VY')) {
+        return { setor: 'Volumosos / Latas (Mez.)', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo.startsWith('VW')) {
+        return { setor: 'Dermocosméticos', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo === 'V43') {
+        return { setor: 'Medicamentos', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo.startsWith('VX')) {
+        return { setor: 'Controlados / Antibióticos', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo.startsWith('VR')) {
+        return { setor: 'Alimentos / Conveniência', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo.startsWith('VG')) {
+        return { setor: 'Termolábeis', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo.startsWith('VH')) {
+        return { setor: 'VH', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+      if (prefixo.startsWith('VM')) {
+        return { setor: 'VM', prefixo, isPickingReserva: ehPickingRes, classificado: true, motivo: 'OK' };
+      }
+
+      // 3. Direciona automaticamente para "Outros" quando não identificado
+      return {
+        setor: 'Outros',
+        prefixo,
+        isPickingReserva: ehPickingRes,
+        classificado: false,
+        motivo: `Prefixo de picking não mapeado (${prefixo})`
+      };
+    }
+
+    function processarAbaAtendimento(normRes, normSaldo) {
+      ultimaBaseRessuprimento = normRes;
+      ultimaBaseSaldo = normSaldo;
+
+      // 1. Mapear Saldo de Estoque por Produto, separando exclusivamente os endereços de Picking de Separação
+      const infoProdSaldo = new Map();
+
+      normSaldo.forEach(row => {
+        const prodId = String(row['PRODUTO'] || '').trim();
+        if (!prodId) return;
+
+        const end = String(row['LOCALIZADOR'] || '').trim().toUpperCase();
+        const tipoLoc = String(row['TIPO LOCALIZADOR'] || '').trim().toUpperCase();
+        const flagPicking = String(row['PICKING'] || '').trim().toUpperCase();
+        const saldo = parseNum(row['SALDO']);
+
+        if (!infoProdSaldo.has(prodId)) {
+          infoProdSaldo.set(prodId, {
+            tiposPorEnd: new Map(),
+            pickingsSeparacao: new Map(), // end -> { endereco, isPickingS, saldoTotal, saldoNegativo }
+            saldoTotalGeral: 0
+          });
+        }
+
+        const pData = infoProdSaldo.get(prodId);
+        pData.saldoTotalGeral += saldo;
+
+        if (end) {
+          pData.tiposPorEnd.set(end, tipoLoc);
+
+          // Identifica se é endereço de Separação (Picking)
+          const ehSeparacao = tipoLoc.includes('SEPARAÇÃO') || tipoLoc.includes('SEPARACAO');
+          if (ehSeparacao) {
+            if (!pData.pickingsSeparacao.has(end)) {
+              pData.pickingsSeparacao.set(end, {
+                endereco: end,
+                isPickingS: false,
+                saldoTotal: 0,
+                temNegativo: false
+              });
+            }
+            const pk = pData.pickingsSeparacao.get(end);
+            if (flagPicking === 'S') pk.isPickingS = true;
+            pk.saldoTotal += saldo;
+            if (saldo < 0) pk.temNegativo = true;
+          }
+        }
+      });
+
+      // Para cada produto, ordena os endereços de picking de separação por prioridade:
+      // 1º Picking = 'S' | 2º Saldo negativo (prioridade de ressuprimento) | 3º Menor saldo
+      const pickingPrincipalPorProd = new Map();
+      infoProdSaldo.forEach((pData, prodId) => {
+        const listaPickings = Array.from(pData.pickingsSeparacao.values());
+        if (listaPickings.length > 0) {
+          listaPickings.sort((a, b) => {
+            if (a.isPickingS !== b.isPickingS) return a.isPickingS ? -1 : 1;
+            if (a.temNegativo !== b.temNegativo) return a.temNegativo ? -1 : 1;
+            return a.saldoTotal - b.saldoTotal;
+          });
+          pickingPrincipalPorProd.set(prodId, {
+            principal: listaPickings[0],
+            todos: listaPickings
+          });
+        }
+      });
+
+      // 2. Consolidar Mapa de Ressuprimento por chave única (Produto + Endereço de Origem) para evitar duplicidade
+      const mapaConsolidado = new Map();
+      normRes.forEach(row => {
+        const prodId = String(row['PRODUTO'] || '').trim();
+        if (!prodId) return;
+
+        const enderecoOrigem = String(row['ENDERECO'] || '').trim().toUpperCase();
+        const desc = String(row['DESCRICAO'] || '-').trim();
+        const qtdSolicitada = parseNum(row['QTDE PEDIDA']);
+        const qtdAtendida = parseNum(row['QTDE ATENDIDA']);
+        let qtdPendente = parseNum(row['SALDO PENDENTE']);
+        if (qtdPendente <= 0 && qtdSolicitada > qtdAtendida) {
+          qtdPendente = Math.max(0, qtdSolicitada - qtdAtendida);
+        }
+
+        const chaveUnica = `${prodId}||${enderecoOrigem}`;
+        if (!mapaConsolidado.has(chaveUnica)) {
+          mapaConsolidado.set(chaveUnica, {
+            produto: prodId,
+            descricao: desc,
+            enderecoOrigem: enderecoOrigem || '-',
+            qtdSolicitada: 0,
+            qtdAtendida: 0,
+            qtdPendente: 0
+          });
+        }
+
+        const acc = mapaConsolidado.get(chaveUnica);
+        acc.qtdSolicitada += qtdSolicitada;
+        acc.qtdAtendida += qtdAtendida;
+        acc.qtdPendente += qtdPendente;
+      });
+
+      // 3. Cruzar bases pelo Código do Produto e classificar pelo Endereço de Picking de Separação
+      registrosAtendimentoConsolidados = [];
+      mapaConsolidado.forEach(item => {
+        const prodInfo = infoProdSaldo.get(item.produto);
+        const existeNoSaldo = Boolean(prodInfo);
+        const tipoLocOrigem = existeNoSaldo && prodInfo.tiposPorEnd.has(item.enderecoOrigem)
+          ? prodInfo.tiposPorEnd.get(item.enderecoOrigem)
+          : '';
+
+        const pkInfo = pickingPrincipalPorProd.get(item.produto);
+        const enderecoPicking = pkInfo ? pkInfo.principal.endereco : '';
+        const todosPickingsStr = pkInfo ? pkInfo.todos.map(p => p.endereco).join(', ') : '-';
+        const saldoPicking = pkInfo ? pkInfo.principal.saldoTotal : (prodInfo ? prodInfo.saldoTotalGeral : 0);
+
+        const classif = classificarSetorPorPicking(enderecoPicking, item.enderecoOrigem, tipoLocOrigem);
+        const percIndividual = item.qtdSolicitada > 0 ? (item.qtdAtendida / item.qtdSolicitada) * 100 : 0;
+
+        registrosAtendimentoConsolidados.push({
+          produto: item.produto,
+          descricao: item.descricao,
+          enderecoOrigem: item.enderecoOrigem,
+          enderecoPicking: enderecoPicking || '-',
+          todosPickings: todosPickingsStr,
+          prefixo: classif.prefixo,
+          setor: classif.setor,
+          isPickingReserva: classif.isPickingReserva,
+          classificado: classif.classificado,
+          motivo: classif.motivo,
+          existeNoSaldo,
+          qtdSolicitada: item.qtdSolicitada,
+          qtdAtendida: item.qtdAtendida,
+          qtdPendente: item.qtdPendente,
+          percAtendimento: percIndividual,
+          saldoEstoque: saldoPicking
+        });
+      });
+
+      // 4. Apurar BLOCO 1 (Atendimento Geral - Mapa Completo)
+      const criarEstruturaSetores = () => {
+        const obj = {};
+        SETORES_ATENDIMENTO.forEach(s => {
+          obj[s.nome] = {
+            nome: s.nome,
+            regra: s.regra,
+            produtos: new Set(),
+            enderecos: new Set(),
+            qtdSolicitada: 0,
+            qtdAtendida: 0,
+            qtdPendente: 0
+          };
+        });
+        return obj;
+      };
+
+      const statsGeral = criarEstruturaSetores();
+      const statsReserva = criarEstruturaSetores();
+
+      let geralTotalSol = 0, geralTotalAtend = 0, geralTotalPend = 0;
+      const geralProds = new Set(), geralEnds = new Set();
+
+      let resTotalSol = 0, resTotalAtend = 0, resTotalPend = 0;
+      const resProds = new Set(), resEnds = new Set();
+
+      registrosAtendimentoConsolidados.forEach(reg => {
+        // Acumula no BLOCO 1 (Mapa Completo)
+        geralTotalSol += reg.qtdSolicitada;
+        geralTotalAtend += reg.qtdAtendida;
+        geralTotalPend += reg.qtdPendente;
+        geralProds.add(reg.produto);
+        if (reg.enderecoPicking && reg.enderecoPicking !== '-' && reg.enderecoPicking !== 'XXXXXX') {
+          geralEnds.add(reg.enderecoPicking);
+        }
+
+        const sg = statsGeral[reg.setor] || statsGeral['Outros'];
+        sg.produtos.add(reg.produto);
+        if (reg.enderecoPicking && reg.enderecoPicking !== '-') sg.enderecos.add(reg.enderecoPicking);
+        sg.qtdSolicitada += reg.qtdSolicitada;
+        sg.qtdAtendida += reg.qtdAtendida;
+        sg.qtdPendente += reg.qtdPendente;
+
+        // Acumula no BLOCO 2 (Exclusivo Picking Reserva)
+        if (reg.isPickingReserva) {
+          resTotalSol += reg.qtdSolicitada;
+          resTotalAtend += reg.qtdAtendida;
+          resTotalPend += reg.qtdPendente;
+          resProds.add(reg.produto);
+          if (reg.enderecoOrigem && reg.enderecoOrigem !== '-') resEnds.add(reg.enderecoOrigem);
+
+          const sr = statsReserva[reg.setor] || statsReserva['Outros'];
+          sr.produtos.add(reg.produto);
+          if (reg.enderecoPicking && reg.enderecoPicking !== '-') sr.enderecos.add(reg.enderecoPicking);
+          sr.qtdSolicitada += reg.qtdSolicitada;
+          sr.qtdAtendida += reg.qtdAtendida;
+          sr.qtdPendente += reg.qtdPendente;
+        }
+      });
+
+      const formatarResumo = (statsObj) => SETORES_ATENDIMENTO.map(s => {
+        const st = statsObj[s.nome];
+        const perc = st.qtdSolicitada > 0 ? (st.qtdAtendida / st.qtdSolicitada) * 100 : 0;
+        return {
+          nome: st.nome,
+          regra: st.regra,
+          qtdProdutos: st.produtos.size,
+          qtdEnderecos: st.enderecos.size,
+          qtdSolicitada: st.qtdSolicitada,
+          qtdAtendida: st.qtdAtendida,
+          qtdPendente: st.qtdPendente,
+          percentual: perc
+        };
+      });
+
+      resumoGeralPorSetor = formatarResumo(statsGeral);
+      resumoReservaPorSetor = formatarResumo(statsReserva);
+
+      // Atualizar DOM - BLOCO 1
+      const geralPerc = geralTotalSol > 0 ? (geralTotalAtend / geralTotalSol) * 100 : 0;
+      document.getElementById('b1-perc-total').textContent = `${geralPerc.toFixed(2).replace('.', ',')}%`;
+      document.getElementById('b1-qtd-solicitada').textContent = geralTotalSol.toLocaleString('pt-BR');
+      document.getElementById('b1-qtd-solicitada-sub').textContent = `${geralProds.size} produtos | ${geralEnds.size} end. picking`;
+      document.getElementById('b1-qtd-atendida').textContent = geralTotalAtend.toLocaleString('pt-BR');
+      document.getElementById('b1-qtd-pendente').textContent = geralTotalPend.toLocaleString('pt-BR');
+
+      // Atualizar DOM - BLOCO 2
+      const resPerc = resTotalSol > 0 ? (resTotalAtend / resTotalSol) * 100 : 0;
+      document.getElementById('b2-consolidado-meta').textContent = `${resProds.size} produtos | ${resEnds.size} endereços de picking reserva identificados`;
+      document.getElementById('b2-total-solicitada').textContent = resTotalSol.toLocaleString('pt-BR');
+      document.getElementById('b2-total-atendida').textContent = resTotalAtend.toLocaleString('pt-BR');
+      document.getElementById('b2-total-pendente').textContent = resTotalPend.toLocaleString('pt-BR');
+      document.getElementById('b2-perc-total').textContent = `${resPerc.toFixed(2).replace('.', ',')}%`;
+      document.getElementById('b2-barra-progresso').style.width = `${Math.min(100, Math.max(0, resPerc))}%`;
+
+      renderizarCardsBloco1();
+      renderizarCardsBloco2();
+      renderizarGraficosAtendimento();
+    }
+
+    function renderizarCardsBloco1() {
+      const container = document.getElementById('b1-cards-setores');
+      container.innerHTML = '';
+
+      resumoGeralPorSetor.forEach(s => {
+        const isOutros = s.nome === 'Outros';
+        const percClamp = Math.min(100, Math.max(0, s.percentual));
+        const borderClass = isOutros && s.qtdSolicitada > 0 ? 'border-amber-500' : 'border-blue-600';
+
+        const card = document.createElement('div');
+        card.className = `bg-white rounded-lg shadow p-3.5 border-l-4 ${borderClass} cursor-pointer hover:bg-blue-50/50 hover:shadow-md transition flex flex-col justify-between`;
+        card.onclick = () => abrirDetalheSetorAtendimento('GERAL', s.nome);
+
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start gap-1">
+              <h4 class="font-bold text-gray-800 text-xs leading-tight">${s.nome}</h4>
+              <span class="text-sm font-black ${isOutros && s.qtdSolicitada > 0 ? 'text-amber-700' : 'text-blue-700'} shrink-0">${s.percentual.toFixed(1).replace('.', ',')}%</span>
+            </div>
+            <p class="text-[10px] text-gray-400 mt-0.5">${s.regra} • ${s.qtdProdutos} prod.</p>
+            <div class="w-full bg-gray-200 rounded-full h-1.5 my-2 overflow-hidden">
+              <div class="${isOutros && s.qtdSolicitada > 0 ? 'bg-amber-500' : 'bg-blue-600'} h-1.5 rounded-full" style="width: ${percClamp}%"></div>
+            </div>
+          </div>
+          <div class="text-[11px] text-gray-600 space-y-0.5 pt-1 border-t border-gray-100">
+            <div class="flex justify-between"><span>Solicitado:</span><span class="font-bold text-gray-800">${s.qtdSolicitada.toLocaleString('pt-BR')}</span></div>
+            <div class="flex justify-between"><span>Atendido:</span><span class="font-bold text-green-600">${s.qtdAtendida.toLocaleString('pt-BR')}</span></div>
+            <div class="flex justify-between"><span>Pendente:</span><span class="font-bold text-red-600">${s.qtdPendente.toLocaleString('pt-BR')}</span></div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderizarCardsBloco2() {
+      const container = document.getElementById('b2-cards-setores');
+      container.innerHTML = '';
+
+      resumoReservaPorSetor.forEach(s => {
+        const isOutros = s.nome === 'Outros';
+        const percClamp = Math.min(100, Math.max(0, s.percentual));
+        const borderClass = isOutros && s.qtdSolicitada > 0 ? 'border-amber-500 bg-amber-50/20' : 'border-blue-800';
+
+        const card = document.createElement('div');
+        card.className = `bg-white rounded-lg shadow p-4 border-l-4 ${borderClass} cursor-pointer hover:bg-blue-50/50 hover:shadow-md transition flex flex-col justify-between`;
+        card.onclick = () => abrirDetalheSetorAtendimento('RESERVA', s.nome);
+
+        const alertaOutros = isOutros && s.qtdSolicitada > 0
+          ? `<span class="inline-block mt-1 text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded"><i class="fas fa-exclamation-triangle mr-1"></i>Clique para auditar sem picking</span>`
+          : '';
+
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start gap-2">
+              <div>
+                <h4 class="font-bold text-blue-950 text-sm">${s.nome}</h4>
+                <span class="text-[10px] font-semibold text-gray-500">${s.regra} • ${s.qtdProdutos} prod. | ${s.qtdEnderecos} pickings</span>
+                ${alertaOutros}
+              </div>
+              <span class="text-xl font-black ${isOutros && s.qtdSolicitada > 0 ? 'text-amber-700' : 'text-blue-700'}">${s.percentual.toFixed(1).replace('.', ',')}%</span>
+            </div>
+
+            <div class="w-full bg-gray-200 rounded-full h-2 my-3 overflow-hidden">
+              <div class="${isOutros && s.qtdSolicitada > 0 ? 'bg-amber-500' : 'bg-blue-700'} h-2 rounded-full transition-all duration-500" style="width: ${percClamp}%"></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100 text-center text-xs">
+            <div class="bg-gray-50 rounded p-1.5">
+              <span class="text-[10px] text-gray-400 block uppercase">Total</span>
+              <span class="font-bold text-gray-800">${s.qtdSolicitada.toLocaleString('pt-BR')}</span>
+            </div>
+            <div class="bg-green-50 rounded p-1.5">
+              <span class="text-[10px] text-green-700 block uppercase">Atendida</span>
+              <span class="font-bold text-green-700">${s.qtdAtendida.toLocaleString('pt-BR')}</span>
+            </div>
+            <div class="bg-red-50 rounded p-1.5">
+              <span class="text-[10px] text-red-700 block uppercase">Pendente</span>
+              <span class="font-bold text-red-700">${s.qtdPendente.toLocaleString('pt-BR')}</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderizarGraficosAtendimento() {
+      const labels = SETORES_ATENDIMENTO.map(s => s.nome);
+      const percGeral = resumoGeralPorSetor.map(s => Number(s.percentual.toFixed(2)));
+      const percReserva = resumoReservaPorSetor.map(s => Number(s.percentual.toFixed(2)));
+
+      const ctxPerc = document.getElementById('chartAtendComparativoPerc').getContext('2d');
+      if (chartAtendComparativoPercInstance) chartAtendComparativoPercInstance.destroy();
+      chartAtendComparativoPercInstance = new Chart(ctxPerc, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: '% Atendimento Geral (Mapa)', data: percGeral, backgroundColor: '#1e3a8a', borderRadius: 4 },
+            { label: '% Picking Reserva', data: percReserva, backgroundColor: '#dc2626', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } },
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2).replace('.', ',')}%` } }
+          }
+        }
+      });
+
+      const resAtendida = resumoReservaPorSetor.map(s => s.qtdAtendida);
+      const resPendente = resumoReservaPorSetor.map(s => s.qtdPendente);
+
+      const ctxVol = document.getElementById('chartAtendReservaVol').getContext('2d');
+      if (chartAtendReservaVolInstance) chartAtendReservaVolInstance.destroy();
+      chartAtendReservaVolInstance = new Chart(ctxVol, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Atendida (Un.)', data: resAtendida, backgroundColor: '#16a34a', borderRadius: 4 },
+            { label: 'Pendente (Un.)', data: resPendente, backgroundColor: '#dc2626', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+        }
+      });
+    }
+
+    // =========================================================================
+    // MODAL DE RASTREABILIDADE (CARDS CLICÁVEIS) + RECLASSIFICAÇÃO DE "OUTROS"
+    // =========================================================================
+    window.abrirDetalheSetorAtendimento = (escopo, setor) => {
+      if (registrosAtendimentoConsolidados.length === 0) {
+        return showGlobalAlert("Carregue e processe as planilhas primeiro.", "erro");
+      }
+
+      modalDetalheState.escopo = escopo;
+      modalDetalheState.setor = setor;
+
+      const filtrados = registrosAtendimentoConsolidados.filter(r => {
+        if (escopo === 'RESERVA' && !r.isPickingReserva) return false;
+        if (setor === 'PENDENTES') return r.qtdPendente > 0;
+        if (setor !== 'TODOS' && r.setor !== setor) return false;
+        return true;
+      });
+
+      modalDetalheState.registrosFiltrados = filtrados;
+
+      const badgeEscopo = document.getElementById('modal-atend-badge-escopo');
+      if (escopo === 'RESERVA') {
+        badgeEscopo.textContent = 'BLOCO 2 • PICKING RESERVA';
+        badgeEscopo.className = 'text-[10px] font-black uppercase px-2 py-0.5 rounded bg-red-600 text-white';
+      } else {
+        badgeEscopo.textContent = 'BLOCO 1 • ATENDIMENTO GERAL';
+        badgeEscopo.className = 'text-[10px] font-black uppercase px-2 py-0.5 rounded bg-blue-600 text-white';
+      }
+
+      const tituloSetor = setor === 'TODOS' ? 'Consolidado Completo' : (setor === 'PENDENTES' ? 'Itens Pendentes de Atendimento' : `Setor: ${setor}`);
+      document.getElementById('modal-atend-titulo').textContent = tituloSetor;
+      document.getElementById('modal-atend-subtitulo').textContent = `${filtrados.length} registros consolidados (cruzados pelo picking de separação)`;
+
+      // Calcula totais do modal
+      const prodsUnicos = new Set(filtrados.map(r => r.produto));
+      const endsUnicos = new Set(filtrados.map(r => r.enderecoPicking).filter(e => e && e !== '-' && e !== 'XXXXXX'));
+      const totalQtd = filtrados.reduce((a, r) => a + r.qtdSolicitada, 0);
+      const totalAtend = filtrados.reduce((a, r) => a + r.qtdAtendida, 0);
+      const totalPend = filtrados.reduce((a, r) => a + r.qtdPendente, 0);
+      const perc = totalQtd > 0 ? (totalAtend / totalQtd) * 100 : 0;
+
+      document.getElementById('det-card-prods').textContent = prodsUnicos.size.toLocaleString('pt-BR');
+      document.getElementById('det-card-ends').textContent = endsUnicos.size.toLocaleString('pt-BR');
+      document.getElementById('det-card-total').textContent = totalQtd.toLocaleString('pt-BR');
+      document.getElementById('det-card-atendida').textContent = totalAtend.toLocaleString('pt-BR');
+      document.getElementById('det-card-pendente').textContent = totalPend.toLocaleString('pt-BR');
+      document.getElementById('det-card-perc').textContent = `${perc.toFixed(2).replace('.', ',')}%`;
+
+      // Se abrir o card "Outros", habilita o painel de reclassificação rápida de prefixos de picking não mapeados
+      const painelOutros = document.getElementById('painel-reclassificar-outros');
+      const prefixosOutros = [...new Set(filtrados.filter(r => r.setor === 'Outros' && r.prefixo && r.prefixo !== 'SEM PICKING' && r.prefixo !== 'XXXXXX' && r.prefixo !== 'XXX').map(r => r.prefixo))].sort();
+      if (setor === 'Outros' && prefixosOutros.length > 0) {
+        const sel = document.getElementById('select-prefixo-outros');
+        sel.innerHTML = prefixosOutros.map(p => `<option value="${p}">Prefixo Picking: ${p}</option>`).join('');
+        painelOutros.classList.remove('hidden');
+      } else {
+        painelOutros.classList.add('hidden');
+      }
+
+      document.getElementById('modal-atend-busca').value = '';
+      renderizarTabelaModalAtendimento();
+
+      const modal = document.getElementById('modal-atendimento-detalhe');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.fecharModalAtendimentoDetalhe = () => {
+      const modal = document.getElementById('modal-atendimento-detalhe');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    function renderizarTabelaModalAtendimento() {
+      const termo = document.getElementById('modal-atend-busca').value.trim().toUpperCase();
+      const tbody = document.getElementById('modal-atend-tbody');
+
+      const lista = modalDetalheState.registrosFiltrados.filter(r => {
+        if (!termo) return true;
+        return r.produto.toUpperCase().includes(termo) ||
+               r.descricao.toUpperCase().includes(termo) ||
+               r.enderecoOrigem.toUpperCase().includes(termo) ||
+               r.enderecoPicking.toUpperCase().includes(termo) ||
+               r.todosPickings.toUpperCase().includes(termo) ||
+               r.setor.toUpperCase().includes(termo);
+      });
+
+      document.getElementById('modal-atend-contagem').textContent = `Exibindo ${lista.length} de ${modalDetalheState.registrosFiltrados.length} registros`;
+
+      if (lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="p-6 text-center text-gray-500 italic">Nenhum registro encontrado para este filtro.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = lista.map(r => {
+        const origemBadge = r.isPickingReserva
+          ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">Picking Reserva</span>'
+          : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700">Geral</span>';
+
+        const setorClass = r.setor === 'Outros' ? 'text-amber-700 font-bold' : 'text-blue-950 font-semibold';
+        const saldoClass = r.saldoEstoque < 0 ? 'text-red-600 font-black' : 'text-indigo-700 font-semibold';
+        const multiPickingTitle = r.todosPickings !== r.enderecoPicking ? `Todos os pickings: ${r.todosPickings}` : r.enderecoPicking;
+
+        return `<tr class="hover:bg-blue-50">
+          <td class="p-2.5 font-bold text-gray-900">${r.produto}</td>
+          <td class="p-2.5 text-gray-700 max-w-[210px] truncate" title="${r.descricao}">${r.descricao}</td>
+          <td class="p-2.5 font-mono text-gray-600">${r.enderecoOrigem}</td>
+          <td class="p-2.5 font-mono font-bold text-blue-900" title="${multiPickingTitle}">${r.enderecoPicking}</td>
+          <td class="p-2.5 ${setorClass}">${r.setor}</td>
+          <td class="p-2.5 text-center">${origemBadge}</td>
+          <td class="p-2.5 text-right font-semibold">${r.qtdSolicitada.toLocaleString('pt-BR')}</td>
+          <td class="p-2.5 text-right font-bold text-green-700">${r.qtdAtendida.toLocaleString('pt-BR')}</td>
+          <td class="p-2.5 text-right font-bold text-red-600">${r.qtdPendente.toLocaleString('pt-BR')}</td>
+          <td class="p-2.5 text-right font-black text-blue-700">${r.percAtendimento.toFixed(1).replace('.', ',')}%</td>
+          <td class="p-2.5 text-right ${saldoClass}">${r.saldoEstoque.toLocaleString('pt-BR')}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    document.getElementById('modal-atend-busca').addEventListener('input', renderizarTabelaModalAtendimento);
+
+    window.salvarMapeamentoRapido = () => {
+      const prefixo = document.getElementById('select-prefixo-outros').value;
+      const setorDestino = document.getElementById('select-destino-setor').value;
+      if (!prefixo || !setorDestino) return;
+
+      regrasCustomizadasPrefixo[prefixo] = setorDestino;
+      localStorage.setItem(STORAGE_KEY_REGRAS_SETOR, JSON.stringify(regrasCustomizadasPrefixo));
+      atualizarBadgeRegrasCustom();
+
+      // Recalcula automaticamente todos os indicadores
+      processarAbaAtendimento(ultimaBaseRessuprimento, ultimaBaseSaldo);
+      // Reabre o modal atualizado
+      abrirDetalheSetorAtendimento(modalDetalheState.escopo, modalDetalheState.setor);
+      showGlobalAlert(`Prefixo "${prefixo}" mapeado para "${setorDestino}" e indicadores recalculados!`, "sucesso");
+    };
+
+    // Modal de Gerenciamento de Mapeamento de Prefixos
+    window.abrirModalMapeamento = () => {
+      renderizarListaRegrasCustom();
+      const modal = document.getElementById('modal-mapeamento-prefixos');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.fecharModalMapeamento = () => {
+      const modal = document.getElementById('modal-mapeamento-prefixos');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    function renderizarListaRegrasCustom() {
+      const container = document.getElementById('lista-regras-custom');
+      const entries = Object.entries(regrasCustomizadasPrefixo);
+      if (entries.length === 0) {
+        container.innerHTML = '<p class="p-3 text-gray-400 italic">Nenhuma regra personalizada cadastrada.</p>';
+        return;
+      }
+      container.innerHTML = entries.map(([pref, setor]) => `
+        <div class="flex justify-between items-center px-3 py-2 bg-white">
+          <div>
+            <span class="font-mono font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">${pref}</span>
+            <span class="mx-2 text-gray-400">→</span>
+            <span class="font-bold text-gray-800">${setor}</span>
+          </div>
+          <button onclick="removerPrefixoCustom('${pref}')" class="text-red-600 hover:text-red-800 font-bold text-xs px-2 py-1 rounded hover:bg-red-50">Remover</button>
+        </div>
+      `).join('');
+    }
+
+    window.adicionarPrefixoManual = () => {
+      const input = document.getElementById('novo-prefixo-input');
+      const prefixo = input.value.trim().toUpperCase().split('-')[0];
+      const setor = document.getElementById('novo-prefixo-setor').value;
+      if (!prefixo) return;
+
+      regrasCustomizadasPrefixo[prefixo] = setor;
+      localStorage.setItem(STORAGE_KEY_REGRAS_SETOR, JSON.stringify(regrasCustomizadasPrefixo));
+      input.value = '';
+      atualizarBadgeRegrasCustom();
+      renderizarListaRegrasCustom();
+
+      if (ultimaBaseRessuprimento.length > 0) {
+        processarAbaAtendimento(ultimaBaseRessuprimento, ultimaBaseSaldo);
+      }
+      showGlobalAlert(`Regra "${prefixo} → ${setor}" adicionada!`, "sucesso");
+    };
+
+    window.removerPrefixoCustom = (prefixo) => {
+      delete regrasCustomizadasPrefixo[prefixo];
+      localStorage.setItem(STORAGE_KEY_REGRAS_SETOR, JSON.stringify(regrasCustomizadasPrefixo));
+      atualizarBadgeRegrasCustom();
+      renderizarListaRegrasCustom();
+
+      if (ultimaBaseRessuprimento.length > 0) {
+        processarAbaAtendimento(ultimaBaseRessuprimento, ultimaBaseSaldo);
+      }
+    };
+
+    document.getElementById('btn-exportar-modal-atend').addEventListener('click', () => {
+      if (modalDetalheState.registrosFiltrados.length === 0) return;
+      const dados = modalDetalheState.registrosFiltrados.map(r => ({
+        "Escopo": modalDetalheState.escopo === 'RESERVA' ? 'Picking Reserva' : 'Atendimento Geral',
+        "Produto": r.produto,
+        "Descrição": r.descricao,
+        "Endereço Origem": r.enderecoOrigem,
+        "Picking Separação": r.enderecoPicking,
+        "Todos os Pickings": r.todosPickings,
+        "Setor": r.setor,
+        "Tipo Origem": r.isPickingReserva ? 'Picking Reserva' : 'Geral',
+        "Qtd. Total": r.qtdSolicitada,
+        "Qtd. Atendida": r.qtdAtendida,
+        "Qtd. Pendente": r.qtdPendente,
+        "% Atendimento": Number(r.percAtendimento.toFixed(2)),
+        "Saldo Picking": r.saldoEstoque
+      }));
+      const ws = window.XLSX.utils.json_to_sheet(dados);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, "Detalhamento");
+      window.XLSX.writeFile(wb, `Detalhe_${modalDetalheState.escopo}_${modalDetalheState.setor}.xlsx`);
+    });
+
+    document.getElementById('btn-exportar-atendimento-excel').addEventListener('click', () => {
+      if (registrosAtendimentoConsolidados.length === 0) {
+        return showGlobalAlert("Processe as planilhas antes de exportar o relatório de Atendimento.", "erro");
+      }
+
+      const wb = window.XLSX.utils.book_new();
+
+      const wsBloco1 = window.XLSX.utils.json_to_sheet(resumoGeralPorSetor.map(s => ({
+        "Setor / Categoria": s.nome,
+        "Regra Prefixo": s.regra,
+        "Produtos": s.qtdProdutos,
+        "Endereços Picking": s.qtdEnderecos,
+        "Qtd. Total Solicitada": s.qtdSolicitada,
+        "Qtd. Já Atendida": s.qtdAtendida,
+        "Qtd. Pendente": s.qtdPendente,
+        "% Atendimento": Number(s.percentual.toFixed(2))
+      })));
+      window.XLSX.utils.book_append_sheet(wb, wsBloco1, "Bloco1_Atendimento_Geral");
+
+      const wsBloco2 = window.XLSX.utils.json_to_sheet(resumoReservaPorSetor.map(s => ({
+        "Setor Picking Reserva": s.nome,
+        "Regra Prefixo": s.regra,
+        "Produtos": s.qtdProdutos,
+        "Endereços Picking": s.qtdEnderecos,
+        "Total Picking Reserva": s.qtdSolicitada,
+        "Já Atendida": s.qtdAtendida,
+        "Pendente": s.qtdPendente,
+        "% Atendimento": Number(s.percentual.toFixed(2))
+      })));
+      window.XLSX.utils.book_append_sheet(wb, wsBloco2, "Bloco2_Picking_Reserva");
+
+      const wsBase = window.XLSX.utils.json_to_sheet(registrosAtendimentoConsolidados.map(r => ({
+        "Produto": r.produto,
+        "Descrição": r.descricao,
+        "Endereço Origem": r.enderecoOrigem,
+        "Picking Separação": r.enderecoPicking,
+        "Todos os Pickings": r.todosPickings,
+        "Setor Classificado": r.setor,
+        "Tipo Origem": r.isPickingReserva ? "Picking Reserva" : "Geral",
+        "Qtd. Total": r.qtdSolicitada,
+        "Qtd. Atendida": r.qtdAtendida,
+        "Qtd. Pendente": r.qtdPendente,
+        "% Atendimento": Number(r.percAtendimento.toFixed(2)),
+        "Saldo Picking": r.saldoEstoque
+      })));
+      window.XLSX.utils.book_append_sheet(wb, wsBase, "Base_Consolidada");
+
+      window.XLSX.writeFile(wb, "Relatorio_Atendimento_e_Picking_Reserva.xlsx");
+      showGlobalAlert("Relatório consolidado (Bloco 1 e Bloco 2) exportado com sucesso!", "sucesso");
+    });
   </script>
 </body>
 </html>
-Processado e analisado em código
