@@ -1269,7 +1269,29 @@
     let chartStatusInstance = null;
     let chartPerformanceInstance = null;
 
-    function isPickingReserva(endereco, tipoLocalizador = '') {
+    // Exceções de produtos que NÃO devem ser considerados como Picking Reserva
+    // mesmo quando localizados em endereços de Picking Reserva
+    function isProdutoExcecaoPickingReserva(descricao = '') {
+      if (!descricao) return false;
+      const descNorm = descricao
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .trim();
+
+      return (
+        descNorm.includes('PROT DE COLCHAO') ||
+        descNorm.includes('PROTETOR DE COLCHAO') ||
+        descNorm.includes('PROT COLCHAO') ||
+        descNorm.includes('ROUPA INT') ||
+        descNorm.includes('FRALD') ||
+        descNorm.includes('ABS')
+      );
+    }
+
+    function isPickingReserva(endereco, tipoLocalizador = '', descricao = '') {
+      if (isProdutoExcecaoPickingReserva(descricao)) return false;
       if (tipoLocalizador.toUpperCase().includes('PICKING RESERVA')) return true;
       if (!endereco) return false;
       
@@ -1303,6 +1325,7 @@
         if (r['PRODUTO'] && r['LOCALIZADOR']) {
           saldoDB.push({
             produto: parseNum(r['PRODUTO']),
+            descricao: (r['DESCRICAO'] || '').toString().trim(),
             endereco: r['LOCALIZADOR'].toString().trim().toUpperCase(),
             tipo: (r['TIPO LOCALIZADOR'] || '').toString().trim().toUpperCase(),
             saldo: parseNum(r['SALDO'])
@@ -1313,7 +1336,7 @@
       let saldoAgrupado = {};
       saldoDB.forEach(s => {
         let key = `${s.produto}_${s.endereco}`;
-        if(!saldoAgrupado[key]) saldoAgrupado[key] = { produto: s.produto, endereco: s.endereco, tipo: s.tipo, saldo: 0 };
+        if(!saldoAgrupado[key]) saldoAgrupado[key] = { produto: s.produto, descricao: s.descricao, endereco: s.endereco, tipo: s.tipo, saldo: 0 };
         saldoAgrupado[key].saldo += s.saldo;
       });
       let saldoConsolidado = Object.values(saldoAgrupado);
@@ -1346,13 +1369,13 @@
         let saldosProd = saldoConsolidado.filter(s => s.produto === prod);
         let origemNoSaldo = saldosProd.find(s => s.endereco === origem);
         let tipoOrigem = origemNoSaldo ? origemNoSaldo.tipo : '';
-        let isOrigemPickingRes = isPickingReserva(origem, tipoOrigem);
+        let isOrigemPickingRes = isPickingReserva(origem, tipoOrigem, desc);
 
         let outrosEnds = saldosProd.filter(s => 
           s.tipo === "CAIXA FECHADA ( RESERVA )" && 
           s.endereco !== origem && 
           s.saldo > 0 &&
-          !isPickingReserva(s.endereco, s.tipo)
+          !isPickingReserva(s.endereco, s.tipo, desc)
         );
 
         let saldoNegativoLocais = saldosProd.filter(s => (s.tipo.includes("PICKING") || s.tipo.includes("SEPARACAO")) && s.saldo < 0)
@@ -2363,10 +2386,10 @@
       return end.split('-')[0].trim();
     }
 
-    function classificarSetorPorPicking(enderecoPickingRaw, enderecoOrigemRaw, tipoLocalizadorOrigem = '') {
+    function classificarSetorPorPicking(enderecoPickingRaw, enderecoOrigemRaw, tipoLocalizadorOrigem = '', descricaoProduto = '') {
       const endPicking = String(enderecoPickingRaw || '').trim().toUpperCase();
       const endOrigem = String(enderecoOrigemRaw || '').trim().toUpperCase();
-      const ehPickingRes = isPickingReserva(endOrigem, tipoLocalizadorOrigem);
+      const ehPickingRes = isPickingReserva(endOrigem, tipoLocalizadorOrigem, descricaoProduto);
 
       if (!endPicking || endPicking === 'XXXXXX' || endPicking === 'XXX' || endPicking === '-') {
         return {
@@ -2584,7 +2607,7 @@
           saldoPicking = prodInfo.saldoTotalGeral;
         }
 
-        const classif = classificarSetorPorPicking(enderecoPicking, item.enderecoOrigem, tipoLocOrigem);
+        const classif = classificarSetorPorPicking(enderecoPicking, item.enderecoOrigem, tipoLocOrigem, item.descricao);
         const percIndividual = item.qtdSolicitada > 0 ? (item.qtdAtendida / item.qtdSolicitada) * 100 : 0;
 
         registrosAtendimentoConsolidados.push({
